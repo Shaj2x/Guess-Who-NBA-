@@ -333,9 +333,24 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 .overlay.opaque { background: var(--bg); }
 /* First screen: the mode picker sits straight on the silk, no game behind it */
 .overlay.start { background: transparent; }
-.overlay.start .dialog { max-width: 600px; padding: var(--s-6); border-radius: 40px; border: 1px solid var(--line); }
-.overlay.start .dialog h2 { font-size: var(--text-3xl); }
-@media (max-width: 560px) { .overlay.start .dialog { padding: var(--s-5); border-radius: var(--r-2xl); } .overlay.start .dialog h2 { font-size: var(--text-2xl); } }
+/* Launcher: name, two play buttons, small options */
+.launcher { max-width: 440px; gap: var(--s-5); }
+.launcher .wordmark { justify-content: center; }
+.launcher .wordmark svg { width: 36px; height: 36px; }
+.launcher .wordmark span { font-size: var(--text-2xl); }
+.play { display: grid; gap: var(--s-2); }
+.playbtn { min-height: 60px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font-family: var(--font-display); font-weight: 600; font-size: var(--text-lg); cursor: pointer; transition: background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
+.playbtn:hover { background: color-mix(in srgb, var(--surface-2) 85%, var(--ink) 8%); }
+.playbtn:active { transform: scale(.98); }
+.playbtn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.playbtn.primary:hover { background: color-mix(in srgb, var(--accent) 88%, var(--ink)); }
+.opts { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.opt { display: flex; align-items: center; gap: var(--s-2); }
+.launcher .back { justify-self: center; }
+.opts .seg button { white-space: nowrap; padding: 0 var(--s-3); }
+@media (max-width: 420px) { .opt .label { display: none; } }
+.overlay.start .dialog { padding: var(--s-6); border-radius: 40px; border: 1px solid var(--line); }
+@media (max-width: 560px) { .overlay.start .dialog { padding: var(--s-5); border-radius: var(--r-2xl); } }
 .dialog { width: 100%; max-width: 520px; background: var(--surface); color: var(--ink); border-radius: var(--r-2xl); padding: var(--s-5); display: grid; gap: var(--s-5); box-shadow: var(--shadow-float); }
 .dialog h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-stretch: 100%; font-size: var(--text-2xl); line-height: var(--leading-tight); }
 .dialog p { margin: var(--s-2) 0 0; color: var(--ink-2); }
@@ -453,35 +468,31 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 </div>
 
 <div class="overlay" id="pregame" hidden>
-  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="pgTitle">
-    <div class="wordmark" id="pgMark" hidden>
+  <div class="dialog launcher" role="dialog" aria-modal="true" aria-label="Start a game">
+    <div class="wordmark" id="pgMark">
       <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="var(--accent)"/><g fill="none" stroke="var(--on-accent)" stroke-width="1.5" stroke-linecap="round"><path d="M14 1v26M1 14h26M5 5c3.8 4.2 3.8 13.8 0 18M23 5c-3.8 4.2-3.8 13.8 0 18"/></g></svg>
       <span>Who's That Baller?</span>
     </div>
-    <div>
-      <h2 id="pgTitle">Guess their NBA player first</h2>
-      <p>You and your opponent each get one of 24 NBA greats. Ask yes/no questions, flip down whoever doesn't fit, and name theirs before they name yours.</p>
+    <div class="play">
+      <button class="playbtn primary" id="modeCpu">Play vs CPU</button>
+      <button class="playbtn" id="modePvp">2 Players</button>
     </div>
-    <div class="choices">
-      <button class="choice" id="modeCpu" aria-pressed="true"><span class="t">vs CPU</span><span class="d">Watch its board and questions live</span></button>
-      <button class="choice" id="modePvp" aria-pressed="false"><span class="t">2 Players</span><span class="d">Pass and play on one device</span></button>
-    </div>
-    <div class="field" id="cpuOpts">
-      <span class="label">CPU difficulty</span>
-      <div class="choices diff" role="group" aria-label="CPU difficulty">
-        <button class="choice" data-diff="easy" aria-pressed="false"><span class="t">Rookie</span><span class="d">Asks at random</span></button>
-        <button class="choice" data-diff="normal" aria-pressed="true"><span class="t">All-Star</span><span class="d">Plays smart</span></button>
-        <button class="choice" data-diff="hard" aria-pressed="false"><span class="t">MVP</span><span class="d">Best split every time</span></button>
+    <div class="opts">
+      <div class="opt">
+        <span class="label">CPU level</span>
+        <div class="seg" role="group" aria-label="CPU level">
+          <button data-diff="easy" aria-pressed="false">Rookie</button>
+          <button data-diff="normal" aria-pressed="true">All-Star</button>
+          <button data-diff="hard" aria-pressed="false">MVP</button>
+        </div>
       </div>
+      <button class="textbtn" id="namesToggle" aria-expanded="false" aria-controls="pvpOpts">Player names</button>
     </div>
     <div class="names" id="pvpOpts" hidden>
       <div class="field"><label class="label" for="p1Name">Player 1</label><input id="p1Name" maxlength="16" placeholder="Player 1" autocomplete="off"></div>
       <div class="field"><label class="label" for="p2Name">Player 2</label><input id="p2Name" maxlength="16" placeholder="Player 2" autocomplete="off"></div>
     </div>
-    <div class="row">
-      <button class="btn ghost" id="pgCancel">Cancel</button>
-      <button class="btn primary" id="pgStart">Start game</button>
-    </div>
+    <button class="textbtn back" id="pgCancel" hidden>Back to the game</button>
   </div>
 </div>
 
@@ -972,17 +983,12 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   // ---------- Pregame ----------
   function openPregame(mode) {
     if (mode) setup.mode = mode;
-    $('modeCpu').setAttribute('aria-pressed', String(setup.mode === 'cpu'));
-    $('modePvp').setAttribute('aria-pressed', String(setup.mode === 'pvp'));
-    $('cpuOpts').hidden = setup.mode !== 'cpu';
-    $('pvpOpts').hidden = setup.mode !== 'pvp';
     document.querySelectorAll('[data-diff]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.diff === setup.diff)));
     $('p1Name').value = setup.names[0] || '';
     $('p2Name').value = setup.names[1] || '';
     $('result').hidden = true; closeMenu();
     const first = !G;
     $('pregame').classList.toggle('start', first);
-    $('pgMark').hidden = !first;
     $('pgCancel').hidden = first;
     $('pregame').hidden = false;
   }
@@ -1021,12 +1027,20 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   $('newGameBtn').addEventListener('click', () => openPregame(G.mode));
   $('segCpu').addEventListener('click', () => openPregame('cpu'));
   $('segPvp').addEventListener('click', () => openPregame('pvp'));
-  $('modeCpu').addEventListener('click', () => openPregame('cpu'));
-  $('modePvp').addEventListener('click', () => { openPregame('pvp'); $('p1Name').focus(); });
-  document.querySelectorAll('[data-diff]').forEach(b => b.addEventListener('click', () => { setup.diff = b.dataset.diff; openPregame(); }));
-  $('pgStart').addEventListener('click', startFromPregame);
+  // One tap starts a game
+  $('modeCpu').addEventListener('click', () => { setup.mode = 'cpu'; startFromPregame(); });
+  $('modePvp').addEventListener('click', () => { setup.mode = 'pvp'; startFromPregame(); });
+  document.querySelectorAll('[data-diff]').forEach(b => b.addEventListener('click', () => {
+    setup.diff = b.dataset.diff;
+    document.querySelectorAll('[data-diff]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  }));
+  $('namesToggle').addEventListener('click', () => {
+    const open = $('pvpOpts').hidden;
+    $('pvpOpts').hidden = !open; $('namesToggle').setAttribute('aria-expanded', String(open));
+    if (open) $('p1Name').focus();
+  });
   $('pgCancel').addEventListener('click', () => { $('pregame').hidden = true; });
-  ['p1Name', 'p2Name'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') startFromPregame(); }));
+  ['p1Name', 'p2Name'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { setup.mode = 'pvp'; startFromPregame(); } }));
   $('hoGo').addEventListener('click', takeover);
   $('resAgain').addEventListener('click', () => newGame({ mode: G.mode, diff: G.diff, names: setup.names }));
   $('resChange').addEventListener('click', () => openPregame(G.mode));
