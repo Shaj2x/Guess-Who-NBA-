@@ -7,316 +7,303 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap">
 <style>
-/* Layout: arena at night. Hardwood tray (your board) on the left; a scorer's rail on the right holds the jumbotron, the opponent's live board, the question dock and the play-by-play. Stacks to one column on phones. Deliberately single dark theme. */
+/* Layout: broadcast-app shell. Top bar, TV-style scorebug, then three panes: questions | your board | live feed (live call, opponent board, play-by-play). Two panes on tablets, one column on phones. */
 :root {
-  --ink: #0a0f1c;
-  --ink-2: #121a2c;
-  --ink-3: #1b2540;
-  --line: #2a3658;
-  --line-2: #3a4870;
-  --chalk: #f1f4fa;
-  --muted: #93a0c0;
-  --maple: #dcab72;
-  --maple-dk: #b8834b;
-  --ball: #f07a2e;
-  --ball-hi: #ff9550;
-  --ball-dk: #b8521a;
-  --led: #ffcb6b;
-  --p2: #5b7cff;
-  --yes: #35d398;
-  --no: #ff5a6b;
-  --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
-  --body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --label: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --bg: #f3f4f6;
+  --surface: #ffffff;
+  --surface-2: #f8f9fb;
+  --ink: #0e1420;
+  --ink-2: #374151;
+  --muted: #6b7280;
+  --line: #e4e7ec;
+  --line-2: #d3d8e0;
+  --accent: #e2531d;
+  --accent-ink: #ffffff;
+  --accent-soft: #fdebe3;
+  --p2: #1f5fd6;
+  --p2-soft: #e5eefc;
+  --yes: #0f7a52;
+  --yes-soft: #e1f4ec;
+  --no: #c42b3a;
+  --no-soft: #fbe6e8;
+  --card: #ffffff;
+  --shadow: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.08);
+  --shadow-lg: 0 12px 32px rgba(16,24,40,.14);
+  --font: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b0f16; --surface: #121823; --surface-2: #0f141d; --ink: #eef1f6; --ink-2: #c7cdd8; --muted: #8a93a3;
+    --line: #232b38; --line-2: #2f3947; --accent: #f26a35; --accent-ink: #1a0a03; --accent-soft: #3a1d10;
+    --p2: #5b8cff; --p2-soft: #172442; --yes: #3ccf91; --yes-soft: #0f2d22; --no: #ff6b78; --no-soft: #3a1419;
+    --card: #161d29; --shadow: 0 1px 2px rgba(0,0,0,.4); --shadow-lg: 0 16px 40px rgba(0,0,0,.55);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b0f16; --surface: #121823; --surface-2: #0f141d; --ink: #eef1f6; --ink-2: #c7cdd8; --muted: #8a93a3;
+  --line: #232b38; --line-2: #2f3947; --accent: #f26a35; --accent-ink: #1a0a03; --accent-soft: #3a1d10;
+  --p2: #5b8cff; --p2-soft: #172442; --yes: #3ccf91; --yes-soft: #0f2d22; --no: #ff6b78; --no-soft: #3a1419;
+  --card: #161d29; --shadow: 0 1px 2px rgba(0,0,0,.4); --shadow-lg: 0 16px 40px rgba(0,0,0,.55);
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html { background: var(--ink); }
+html { background: var(--bg); }
 body {
   margin: 0; min-height: 100%;
-  color: var(--chalk); font: 15px/1.45 var(--body);
+  background: var(--bg); color: var(--ink);
+  font: 400 15px/1.45 var(--font); font-stretch: 100%;
+  -webkit-font-smoothing: antialiased;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 18px 40px;
-  background:
-    radial-gradient(900px 420px at 15% -120px, rgba(240,122,46,.20), transparent 70%),
-    radial-gradient(900px 420px at 95% -160px, rgba(91,124,255,.16), transparent 70%),
-    var(--ink);
-  overflow-x: hidden;
+  padding-block: 0 40px;
 }
 [hidden] { display: none !important; }
 button, input { font: inherit; color: inherit; }
-:focus-visible { outline: 3px solid var(--ball-hi); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1440px; margin: 0 auto; display: grid; gap: 16px; }
+.num { font-variant-numeric: tabular-nums; }
+.cond { font-stretch: 75%; }
+.label { font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 
-.court-lines { position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .06; }
-.court-lines svg { width: 100%; height: 100%; }
-.wrap { position: relative; z-index: 1; max-width: 1360px; margin: 0 auto; display: grid; gap: 18px; }
-
-/* ---------- Header ---------- */
-.top { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
-.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
-.logo { width: 50px; height: 50px; flex: none; border-radius: 50%; background: radial-gradient(circle at 35% 30%, var(--ball-hi), var(--ball) 45%, var(--ball-dk)); box-shadow: 0 6px 18px rgba(240,122,46,.4), inset -4px -6px 10px rgba(0,0,0,.25); position: relative; overflow: hidden; }
-.logo svg { position: absolute; inset: 0; }
-.brand h1 { margin: 0; font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: clamp(1.9rem, 4.6vw, 2.8rem); line-height: .88; letter-spacing: .01em; }
-.brand h1 span { color: var(--ball); }
-.brand p { margin: 3px 0 0; color: var(--muted); font-family: var(--label); letter-spacing: .12em; text-transform: uppercase; font-size: .78rem; }
-.top-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-.seg { display: inline-flex; padding: 3px; background: var(--ink-2); border: 1px solid var(--line); border-radius: 999px; }
-.seg button { min-height: 38px; border: 0; background: transparent; padding: 7px 14px; border-radius: 999px; font-family: var(--label); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: .85rem; color: var(--muted); cursor: pointer; }
-.seg button[aria-pressed="true"] { background: var(--chalk); color: var(--ink); }
+/* ---------- App bar ---------- */
+.appbar { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; padding-block: 16px 4px; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.mark { width: 36px; height: 36px; flex: none; border-radius: 10px; background: var(--accent); display: grid; place-items: center; }
+.mark svg { width: 22px; height: 22px; }
+.brand-name { font-weight: 800; font-stretch: 75%; font-size: 1.5rem; letter-spacing: -.005em; line-height: 1; text-transform: uppercase; }
+.brand-sub { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+.bar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; box-shadow: var(--shadow); }
+.seg button { border: 0; background: transparent; border-radius: 7px; padding: 0 14px; min-height: 36px; font-weight: 600; font-size: .88rem; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
 .btn {
-  border-radius: 10px; border: 1px solid var(--line-2); background: var(--ink-3);
-  padding: 9px 14px; font-family: var(--label); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: .9rem;
-  cursor: pointer; transition: background .15s, border-color .15s, transform .1s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 42px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line-2);
+  background: var(--surface); color: var(--ink); font-weight: 600; font-size: .92rem; cursor: pointer;
+  box-shadow: var(--shadow); transition: background .15s, border-color .15s, transform .12s, box-shadow .15s;
 }
-.btn { min-height: 44px; }
 .btn:hover:not(:disabled) { border-color: var(--muted); transform: translateY(-1px); }
-.btn:active:not(:disabled) { transform: translateY(1px) scale(.98); }
-.btn:disabled { opacity: .38; cursor: not-allowed; }
-.btn.primary { background: linear-gradient(180deg, var(--ball-hi), var(--ball)); border-color: var(--ball); color: #1d0c02; box-shadow: 0 6px 16px rgba(240,122,46,.28); }
-.btn.primary:hover:not(:disabled) { border-color: var(--ball-hi); }
-.btn.primary:disabled, .btn.go:disabled { background: var(--ink-3); border-color: var(--line-2); color: var(--muted); box-shadow: none; }
-.btn.danger { background: transparent; border-color: var(--no); color: var(--no); }
-.btn.danger.on { background: var(--no); color: #22050a; }
-.btn.go { background: var(--yes); border-color: var(--yes); color: #04210f; }
+.btn:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
+.btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:disabled { background: var(--surface-2); border-color: var(--line); color: var(--muted); opacity: 1; }
+.btn.ghost { background: transparent; box-shadow: none; }
+.btn.danger { color: var(--no); border-color: color-mix(in srgb, var(--no) 45%, var(--line)); background: transparent; box-shadow: none; }
+.btn.danger.on { background: var(--no); color: #fff; border-color: var(--no); }
+.btn.go { background: var(--yes); border-color: var(--yes); color: #fff; }
+.btn.go:disabled { background: var(--surface-2); border-color: var(--line); color: var(--muted); opacity: 1; }
 
-/* ---------- Game grid ---------- */
-.game {
-  display: grid; gap: 18px; align-items: start;
-  grid-template-columns: minmax(0, 1fr) 410px;
-  grid-template-rows: auto auto auto 1fr;
-  grid-template-areas: "board jumbo" "board opp" "board dock" "board log";
-}
-.area-board { grid-area: board; }
-.area-jumbo { grid-area: jumbo; }
-.area-opp { grid-area: opp; }
-.area-dock { grid-area: dock; }
-.area-log { grid-area: log; }
-@media (max-width: 1060px) {
-  .game { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "jumbo" "opp" "dock" "board" "log"; }
+/* ---------- Scorebug ---------- */
+.scorebug { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+.team { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 12px; padding: 12px 16px; position: relative; transition: background .25s; }
+.team.right { grid-template-columns: auto minmax(0,1fr) auto; direction: rtl; }
+.team.right > * { direction: ltr; }
+.team .sw { width: 10px; height: 36px; border-radius: 3px; background: var(--accent); }
+.team.right .sw { background: var(--p2); }
+.team .tn { font-weight: 700; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.team.right .tn, .team.right .tw { text-align: right; }
+.team .tw { font-size: .78rem; color: var(--muted); }
+.team .tc { font-weight: 800; font-stretch: 75%; font-size: 2rem; line-height: 1; }
+.team .tc small { font-size: .7rem; font-weight: 600; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; margin-left: 4px; font-stretch: 100%; }
+.team.right .tc small { margin: 0 4px 0 0; }
+.team.active { background: linear-gradient(90deg, var(--accent-soft), transparent 85%); }
+.team.right.active { background: linear-gradient(270deg, var(--p2-soft), transparent 85%); }
+.team.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--accent); }
+.team.right.active::after { background: var(--p2); }
+.mid { display: grid; place-items: center; align-content: center; padding: 8px 18px; border-inline: 1px solid var(--line); background: var(--surface-2); min-width: 120px; text-align: center; }
+.mid .turn { font-weight: 700; font-size: .82rem; white-space: nowrap; }
+.mid .qc { font-size: .72rem; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+@media (max-width: 560px) {
+  .team { grid-template-columns: auto minmax(0,1fr); padding: 10px 12px; gap: 8px; }
+  .team.right { grid-template-columns: auto minmax(0,1fr); }
+  .team .tc { grid-column: 2; font-size: 1.6rem; }
+  .team.right .tc { text-align: right; }
+  .team .sw { grid-row: span 2; height: 100%; }
+  .mid { min-width: 0; padding: 8px 10px; }
 }
 
-.panel { background: linear-gradient(180deg, rgba(255,255,255,.025), transparent), var(--ink-2); border: 1px solid var(--line); border-radius: 16px; padding: 14px; min-width: 0; }
-.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-.eyebrow { font-family: var(--label); font-weight: 700; text-transform: uppercase; letter-spacing: .14em; font-size: .76rem; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; }
-.live { display: inline-flex; align-items: center; gap: 6px; font-family: var(--label); font-weight: 700; letter-spacing: .12em; font-size: .7rem; color: var(--no); text-transform: uppercase; }
-.live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--no); animation: ping 1.6s infinite; }
-@keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(255,90,107,.6); } 80%,100% { box-shadow: 0 0 0 8px rgba(255,90,107,0); } }
-
-/* ---------- Jumbotron ---------- */
-.jumbo {
-  border-radius: 18px; overflow: hidden; border: 1px solid #33406a;
-  background:
-    radial-gradient(rgba(255,255,255,.05) 1px, transparent 1.2px) 0 0 / 5px 5px,
-    linear-gradient(180deg, #121a33, #0b1124);
-  box-shadow: 0 18px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+/* ---------- Layout ---------- */
+.layout {
+  display: grid; gap: 16px; align-items: start;
+  grid-template-columns: 300px minmax(0,1fr) 340px;
+  grid-template-areas: "q board live" "q board opp" "q board log";
+  grid-template-rows: auto auto 1fr;
 }
-.score-row { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: stretch; border-bottom: 1px solid #2a355a; }
-.side { padding: 10px 14px; display: grid; gap: 2px; min-width: 0; position: relative; transition: background .3s; }
-.side.right { text-align: right; }
-.side.active { background: linear-gradient(180deg, rgba(240,122,46,.22), rgba(240,122,46,.04)); }
-.side.right.active { background: linear-gradient(180deg, rgba(91,124,255,.24), rgba(91,124,255,.04)); }
-.side.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: var(--ball); }
-.side.right.active::after { background: var(--p2); }
-.side .who { font-family: var(--label); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; font-size: .8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.side.active .who { color: var(--chalk); }
-.side .count { font-family: var(--display); font-weight: 900; font-size: 2.3rem; line-height: .95; color: var(--led); font-variant-numeric: tabular-nums; text-shadow: 0 0 14px rgba(255,203,107,.35); }
-.side .count small { font-family: var(--label); font-weight: 600; font-size: .72rem; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; text-shadow: none; margin-left: 4px; }
-.side.right .count small { margin: 0 4px 0 0; }
-.side .wins { font-family: var(--label); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-variant-numeric: tabular-nums; }
-.clock { display: grid; place-items: center; align-content: center; padding: 8px 14px; border-inline: 1px solid #2a355a; background: rgba(0,0,0,.25); }
-.clock .lbl { font-family: var(--label); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
-.clock .num { font-family: var(--display); font-weight: 900; font-size: 1.7rem; color: var(--no); line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 0 12px rgba(255,90,107,.4); }
-.screen { padding: 16px 16px 14px; min-height: 168px; display: grid; gap: 8px; align-content: start; }
-.screen .asker { font-family: var(--label); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: .78rem; color: var(--ball-hi); }
-.screen .q { font-family: var(--display); font-weight: 800; font-size: clamp(1.45rem, 3vw, 1.85rem); line-height: 1.02; text-transform: uppercase; letter-spacing: .01em; min-height: 2.04em; text-wrap: balance; }
-.screen .q.caret::after { content: ""; display: inline-block; width: .45em; height: .85em; margin-left: 3px; background: var(--led); vertical-align: -.05em; animation: blink .8s steps(1) infinite; }
+.area-q { grid-area: q; } .area-board { grid-area: board; } .area-live { grid-area: live; } .area-opp { grid-area: opp; } .area-log { grid-area: log; }
+@media (max-width: 1260px) {
+  .layout { grid-template-columns: 300px minmax(0,1fr); grid-template-areas: "live live" "q board" "opp board" "log board"; grid-template-rows: auto auto auto 1fr; }
+}
+@media (max-width: 820px) {
+  .layout { grid-template-columns: minmax(0,1fr); grid-template-areas: "live" "q" "board" "opp" "log"; grid-template-rows: none; }
+}
+.pane { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); min-width: 0; }
+.pane-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.pane-title { font-weight: 700; font-size: .95rem; }
+.pane-body { padding: 14px; }
+
+/* ---------- Questions pane ---------- */
+.q-pane { display: flex; flex-direction: column; }
+@media (min-width: 821px) { .q-pane { position: sticky; top: 16px; max-height: calc(100vh - 32px); } }
+.qlist { overflow-y: auto; padding: 6px 8px; flex: 1 1 auto; min-height: 0; }
+.qgroup + .qgroup { margin-top: 6px; }
+.qgroup .label { padding: 8px 8px 4px; display: block; }
+.qrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 40px; padding: 6px 10px; border: 1px solid transparent; border-radius: 9px; background: transparent; text-align: left; cursor: pointer; font-size: .92rem; font-weight: 500; color: var(--ink-2); transition: background .12s, border-color .12s; }
+.qrow:hover:not(:disabled) { background: var(--surface-2); border-color: var(--line); }
+.qrow.sel { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); font-weight: 600; }
+.qrow:disabled { cursor: default; }
+.qrow.asked { color: var(--muted); }
+.qrow .st { flex: none; font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
+.qrow .st.y { background: var(--yes-soft); color: var(--yes); }
+.qrow .st.n { background: var(--no-soft); color: var(--no); }
+.qrow .st.dot { width: 8px; height: 8px; padding: 0; border-radius: 50%; border: 1.5px solid var(--line-2); }
+.qrow.sel .st.dot { background: var(--accent); border-color: var(--accent); }
+.q-locked .qrow:not(.asked) { opacity: .5; }
+.q-foot { border-top: 1px solid var(--line); padding: 12px; display: grid; gap: 10px; background: var(--surface); border-radius: 0 0 14px 14px; }
+.preview { font-size: .9rem; color: var(--muted); min-height: 2.6em; line-height: 1.3; }
+.preview b { color: var(--ink); }
+.preview.ready { color: var(--ink); font-weight: 600; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.actions .wide { grid-column: 1 / -1; }
+@media (max-width: 820px) { .qrow { min-height: 44px; } .btn { min-height: 44px; } }
+
+/* ---------- Board ---------- */
+.board-head { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px 16px; align-items: center; }
+.board-title { font-weight: 800; font-stretch: 75%; font-size: 1.45rem; line-height: 1; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.board-sub { font-size: .82rem; color: var(--muted); margin-top: 3px; }
+.tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.toggle { display: inline-flex; align-items: center; gap: 8px; font-size: .86rem; font-weight: 500; color: var(--ink-2); cursor: pointer; min-height: 36px; }
+.toggle input { appearance: none; margin: 0; width: 34px; height: 20px; border-radius: 999px; background: var(--line-2); position: relative; cursor: pointer; transition: background .2s; }
+.toggle input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .2s; }
+.toggle input:checked { background: var(--accent); }
+.toggle input:checked::after { transform: translateX(14px); }
+.secret { display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 8px; margin: 0 14px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); }
+.secret .sj { width: 44px; height: 48px; border-radius: 8px; flex: none; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 16%, var(--card)); }
+.secret .sj svg { width: 38px; height: auto; }
+.secret .nm { font-weight: 700; font-size: 1rem; line-height: 1.15; }
+.secret .meta { font-size: .8rem; color: var(--muted); }
+.secret .lock { margin-left: auto; font-size: .72rem; color: var(--muted); text-align: right; max-width: 14em; }
+@media (max-width: 560px) { .secret .lock { display: none; } }
+
+.board { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 10px; padding: 14px; }
+@media (max-width: 1000px) { .board { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+@media (max-width: 420px) { .board { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; padding: 10px; } }
+.card {
+  position: relative; display: flex; flex-direction: column; width: 100%; padding: 0; text-align: left; cursor: pointer;
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow);
+  transition: transform .18s ease, box-shadow .18s, opacity .25s, filter .25s, border-color .15s;
+}
+.card:hover:not(.out) { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.card:active:not(.out) { transform: translateY(0); }
+.card .art { aspect-ratio: 1 / .92; display: grid; place-items: center; background: linear-gradient(180deg, color-mix(in srgb, var(--c) 18%, var(--card)), color-mix(in srgb, var(--c) 6%, var(--card))); border-bottom: 1px solid var(--line); }
+.card .art svg { width: 72%; height: auto; display: block; filter: drop-shadow(0 3px 3px rgba(0,0,0,.15)); }
+.card .info { padding: 8px 9px 9px; display: grid; gap: 2px; }
+.card .nm { font-weight: 700; font-size: .86rem; line-height: 1.15; overflow-wrap: anywhere; }
+.card .meta { font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .x { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .2s; }
+.card .x::before, .card .x::after { content: ""; position: absolute; left: 50%; top: 50%; width: 120%; height: 2px; background: var(--muted); transform-origin: center; }
+.card .x::before { transform: translate(-50%,-50%) rotate(52deg); }
+.card .x::after { transform: translate(-50%,-50%) rotate(-52deg); }
+.card.out { opacity: .32; filter: grayscale(1); transform: scale(.97); box-shadow: none; }
+.card.out .x { opacity: .55; }
+.board.guessing .card:not(.out) { border-color: color-mix(in srgb, var(--no) 50%, var(--line)); }
+.board.guessing .card.pick { border-color: var(--no); box-shadow: 0 0 0 3px color-mix(in srgb, var(--no) 35%, transparent), var(--shadow-lg); transform: translateY(-2px); }
+.board.guessing .card.out { cursor: not-allowed; }
+.board.deal .card { animation: dealIn .45s cubic-bezier(.2,.9,.3,1) backwards; animation-delay: calc(var(--i) * 22ms); }
+@keyframes dealIn { from { opacity: 0; transform: translateY(10px); } }
+
+/* ---------- Live ---------- */
+.live { overflow: hidden; }
+.livetag { display: inline-flex; align-items: center; gap: 7px; font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--no); }
+.livetag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--no); animation: ping 1.8s infinite; }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--no) 55%, transparent); } 80%, 100% { box-shadow: 0 0 0 7px transparent; } }
+.live-body { padding: 14px; display: grid; gap: 10px; min-height: 176px; align-content: start; }
+.asker { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: .88rem; color: var(--ink-2); }
+.av { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: .78rem; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); flex: none; }
+.av.p0 { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.av.p1 { background: var(--p2); color: #fff; border-color: var(--p2); }
+.lq { margin: 0; font-weight: 750; font-stretch: 85%; font-size: clamp(1.25rem, 2.2vw, 1.5rem); line-height: 1.15; text-wrap: balance; min-height: 2.3em; letter-spacing: -.005em; }
+.lq.caret::after { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: 3px; background: var(--accent); vertical-align: -.12em; animation: blink .9s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
-.screen .foot { display: flex; align-items: center; gap: 12px; min-height: 40px; flex-wrap: wrap; }
-.stamp { font-family: var(--display); font-weight: 900; font-size: 1.6rem; letter-spacing: .06em; padding: 0 14px; border-radius: 8px; border: 3px solid currentColor; line-height: 1.25; transform: rotate(-4deg); animation: stamp .35s cubic-bezier(.2,1.6,.4,1); display: inline-block; }
-.stamp.y { color: var(--yes); background: rgba(53,211,152,.12); }
-.stamp.n { color: var(--no); background: rgba(255,90,107,.12); }
-@keyframes stamp { from { transform: scale(2.2) rotate(-4deg); opacity: 0; } to { transform: scale(1) rotate(-4deg); opacity: 1; } }
-.screen .sub { color: var(--muted); font-size: .9rem; min-width: 0; flex: 1 1 180px; }
+.lfoot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 32px; }
+.verdict { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; font-size: .95rem; letter-spacing: .06em; padding: 4px 12px; border-radius: 8px; animation: pop .3s cubic-bezier(.2,1.4,.4,1); }
+.verdict.y { background: var(--yes-soft); color: var(--yes); }
+.verdict.n { background: var(--no-soft); color: var(--no); }
+@keyframes pop { from { transform: scale(.8); opacity: 0; } }
+.lsub { font-size: .86rem; color: var(--muted); flex: 1 1 160px; min-width: 0; }
 
-/* ---------- Your board (hardwood) ---------- */
-.tray {
-  border-radius: 18px; padding: 14px;
-  background:
-    repeating-linear-gradient(90deg, rgba(60,30,5,.08) 0 1px, transparent 1px 52px),
-    repeating-linear-gradient(90deg, transparent 0 26px, rgba(255,255,255,.06) 26px 27px, transparent 27px 52px),
-    linear-gradient(180deg, var(--maple), var(--maple-dk));
-  box-shadow: inset 0 0 0 3px rgba(0,0,0,.14), inset 0 0 0 7px rgba(255,255,255,.12), 0 24px 50px rgba(0,0,0,.45);
-}
-.tray-head { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 12px; align-items: center; margin-bottom: 12px; color: #3a210b; }
-.secret { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.42); border: 1px solid rgba(58,33,11,.2); border-radius: 12px; padding: 6px 12px 6px 6px; min-width: 0; }
-.secret .mini-jersey { width: 46px; height: 50px; flex: none; border-radius: 8px; display: grid; place-items: center; }
-.secret .mini-jersey svg { width: 42px; height: auto; }
-.secret .lbl { font-family: var(--label); font-weight: 700; text-transform: uppercase; letter-spacing: .12em; font-size: .68rem; color: #6d4a26; }
-.secret .nm { font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: 1.2rem; line-height: .95; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tray-title { min-width: 0; }
-.tray-title h2 { margin: 0; font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: 1.55rem; line-height: .95; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tray-title .left { font-family: var(--label); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; font-size: .8rem; font-variant-numeric: tabular-nums; color: #6d4a26; }
-.tray-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: end; }
-.tray-tools .btn { background: rgba(255,255,255,.4); border-color: rgba(58,33,11,.3); color: #3a210b; padding: 7px 11px; font-size: .82rem; }
-.switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-family: var(--label); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: .82rem; color: #3a210b; }
-.switch input { appearance: none; width: 36px; height: 20px; border-radius: 999px; background: rgba(58,33,11,.3); position: relative; cursor: pointer; transition: background .2s; margin: 0; }
-.switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
-.switch input:checked { background: var(--ball-dk); }
-.switch input:checked::after { transform: translateX(16px); }
-@media (max-width: 640px) {
-  .tray-head { grid-template-columns: minmax(0,1fr) auto; }
-  .secret { grid-column: 1 / -1; order: 3; }
-}
-
-.board { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
-@media (max-width: 760px) { .board { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-@media (max-width: 440px) { .board { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } }
-
-.card { appearance: none; border: 0; padding: 0; background: none; cursor: pointer; display: block; width: 100%; aspect-ratio: 3 / 4.15; max-width: 100%; perspective: 900px; }
-.card .inner { position: relative; width: 100%; height: 100%; transition: transform .5s cubic-bezier(.3,1.25,.5,1); transform-style: preserve-3d; }
-.card.flipped .inner { transform: rotateY(180deg); }
-.board.deal .card { animation: dealIn .5s cubic-bezier(.2,1.1,.4,1) backwards; animation-delay: calc(var(--i) * 28ms); }
-@keyframes dealIn { from { opacity: 0; transform: translateY(-14px) scale(.92); } }
-.face { position: absolute; inset: 0; border-radius: 12px; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; display: flex; flex-direction: column; }
-.front {
-  color: #17110a; border: 2px solid #fffaf2;
-  background: linear-gradient(170deg, color-mix(in srgb, var(--c) 30%, #fbf7f0) 0%, #fbf7f0 58%);
-  box-shadow: 0 3px 0 rgba(60,30,5,.35), 0 10px 18px rgba(40,20,0,.25);
-  transition: transform .15s, box-shadow .15s;
-}
-.front::before { content: ""; position: absolute; inset: 0; background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.45) 45%, transparent 60%); transform: translateX(-120%); transition: transform .6s; pointer-events: none; }
-.card:hover:not(.flipped) .front { transform: translateY(-2px); box-shadow: 0 6px 0 rgba(60,30,5,.3), 0 16px 22px rgba(40,20,0,.28); }
-.card:hover:not(.flipped) .front::before { transform: translateX(120%); }
-.front .jersey { flex: 1; display: grid; place-items: center; padding: 18px 8px 0; min-height: 0; }
-.front .jersey svg { width: 80%; height: auto; max-height: 100%; display: block; filter: drop-shadow(0 4px 4px rgba(0,0,0,.18)); }
-.front .meta { padding: 5px 6px 7px; text-align: center; background: rgba(255,255,255,.65); border-top: 1px solid rgba(0,0,0,.06); }
-.front .nm { font-family: var(--display); font-weight: 800; text-transform: uppercase; line-height: .95; font-size: clamp(.78rem, 1.25vw, 1rem); letter-spacing: .01em; text-wrap: balance; overflow-wrap: anywhere; }
-.front .nk { font-family: var(--label); font-weight: 500; font-size: .72rem; color: #6f5c48; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.front .tag { position: absolute; top: 6px; font-family: var(--label); font-weight: 700; font-size: .68rem; letter-spacing: .06em; font-variant-numeric: tabular-nums; }
-.front .tag.pos { left: 6px; background: #17110a; color: #fbf7f0; border-radius: 5px; padding: 1px 6px; }
-.front .tag.ht { right: 7px; color: #5d4a36; }
-.back { transform: rotateY(180deg); background: radial-gradient(circle at 35% 28%, var(--ball-hi), var(--ball) 42%, var(--ball-dk)); border: 2px solid rgba(60,25,0,.3); box-shadow: inset -6px -10px 20px rgba(0,0,0,.2), 0 3px 0 rgba(60,30,5,.35); }
-.back svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.back .nm { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; font-family: var(--display); font-weight: 800; text-transform: uppercase; color: rgba(40,12,0,.55); font-size: .78rem; padding: 0 6px; overflow-wrap: anywhere; }
-.board.guessing .card:not(.flipped) .front { box-shadow: 0 0 0 3px rgba(255,90,107,.7), 0 10px 18px rgba(40,20,0,.25); }
-.board.guessing .card.pick .front { box-shadow: 0 0 0 5px var(--no), 0 0 26px rgba(255,90,107,.7); transform: translateY(-4px) scale(1.03); }
-.board.guessing .card.flipped { cursor: not-allowed; }
-
-/* ---------- Opponent mini board ---------- */
-.opp-board { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 5px; }
-.tile { aspect-ratio: 3 / 4; perspective: 500px; max-width: 100%; }
-.tile .ti { position: relative; width: 100%; height: 100%; transition: transform .45s cubic-bezier(.3,1.2,.5,1); transform-style: preserve-3d; }
-.tile.out .ti { transform: rotateY(180deg); }
-.tile .tf, .tile .tb { position: absolute; inset: 0; border-radius: 6px; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: grid; place-items: center; align-content: center; overflow: hidden; }
-.tile .tf { background: linear-gradient(180deg, var(--c), color-mix(in srgb, var(--c) 70%, #000)); color: var(--t); border: 1px solid rgba(255,255,255,.18); transition: box-shadow .25s, transform .25s, opacity .25s; }
-.tile .tf b { font-family: var(--display); font-weight: 900; font-size: clamp(.95rem, 2.6vw, 1.25rem); line-height: 1; }
-.tile .tf span { font-family: var(--label); font-weight: 700; font-size: .6rem; letter-spacing: .04em; text-transform: uppercase; opacity: .9; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
-.tile .tb { transform: rotateY(180deg); background: radial-gradient(circle at 35% 30%, #c86a32, #8a3f14); opacity: .4; }
-.tile .tb::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(0,0,0,.4); }
-.tile .tb::after { content: ""; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(0,0,0,.4); }
-.opp-board.scanning .tile:not(.out):not(.hl) .tf { opacity: .3; }
-.tile.hl .tf { box-shadow: 0 0 0 2px var(--led), 0 0 12px rgba(255,203,107,.6); transform: translateY(-2px); }
-.tile.target .tf { box-shadow: 0 0 0 3px var(--no), 0 0 16px rgba(255,90,107,.8); transform: scale(1.1); }
-.opp-meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; font-family: var(--label); font-size: .8rem; letter-spacing: .06em; color: var(--muted); text-transform: uppercase; font-variant-numeric: tabular-nums; flex-wrap: wrap; }
-.opp-meta b { color: var(--chalk); }
-.opp-secret { display: inline-flex; align-items: center; gap: 6px; }
-.opp-secret i { width: 14px; height: 18px; border-radius: 3px; background: radial-gradient(circle at 35% 30%, var(--ball-hi), var(--ball-dk)); display: inline-block; }
-
-/* ---------- Question dock ---------- */
-.dock { position: relative; }
-.dock.locked .qbody, .dock.locked .actions { display: none; }
-.dock .lockmsg { display: grid; gap: 4px; text-align: center; padding: 18px 12px; border-radius: 12px; background: var(--ink); border: 1px dashed var(--line-2); }
-.dock .lockmsg b { font-family: var(--display); font-weight: 800; text-transform: uppercase; font-size: 1.35rem; letter-spacing: .03em; }
-.dock .lockmsg span { color: var(--muted); font-size: .9rem; }
-.qgroup + .qgroup { margin-top: 10px; }
-.glabel { font-family: var(--label); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin-bottom: 6px; }
-.qs { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { border: 1px solid var(--line-2); background: var(--ink-3); border-radius: 999px; padding: 6px 12px; cursor: pointer; font-family: var(--label); font-weight: 600; font-size: .9rem; letter-spacing: .02em; transition: background .15s, border-color .15s, transform .1s; }
-.chip:hover:not(:disabled) { border-color: var(--ball); transform: translateY(-1px); }
-.chip:active:not(:disabled) { transform: translateY(1px) scale(.97); }
-@media (pointer: coarse), (max-width: 760px) { .chip { min-height: 44px; padding-inline: 14px; } .seg button { min-height: 44px; } }
-.chip.sel { background: var(--ball); border-color: var(--ball); color: #1d0c02; }
-.chip:disabled { opacity: .3; cursor: not-allowed; }
-.chip.asked-yes:disabled, .chip.asked-no:disabled { opacity: .6; }
-.chip.asked-yes:disabled { border-color: rgba(53,211,152,.5); }
-.chip.asked-no:disabled { border-color: rgba(255,90,107,.5); }
-.chip.asked-yes:disabled::after { content: " \2713"; color: var(--yes); }
-.chip.asked-no:disabled::after { content: " \2715"; color: var(--no); }
-.preview { margin: 12px 0 10px; padding: 10px 12px; border-radius: 10px; background: var(--ink); border: 1px dashed var(--line-2); color: var(--muted); min-height: 2.8em; font-size: .95rem; }
-.preview.ready { border-style: solid; border-color: var(--ball); color: var(--chalk); }
-.actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-.actions .btn { padding-inline: 8px; }
+/* ---------- Opponent board ---------- */
+.opp-grid { display: grid; grid-template-columns: repeat(8, minmax(0,1fr)); gap: 5px; padding: 14px 14px 10px; }
+@media (max-width: 1260px) and (min-width: 821px) { .opp-grid { grid-template-columns: repeat(6, minmax(0,1fr)); } }
+.tile { aspect-ratio: 1 / 1.1; border-radius: 7px; display: grid; place-items: center; align-content: center; background: var(--c); color: var(--t); border: 1px solid color-mix(in srgb, var(--c) 70%, #000); transition: background .3s, color .3s, border-color .3s, box-shadow .2s, transform .2s, opacity .3s; max-width: 100%; }
+.tile b { font-weight: 800; font-stretch: 75%; font-size: 1.05rem; line-height: 1; }
+.tile span { font-size: .55rem; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; max-width: 100%; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .9; }
+.tile.out { background: transparent; color: var(--muted); border: 1px dashed var(--line-2); opacity: .55; }
+.opp-grid.scanning .tile:not(.out):not(.hl) { opacity: .3; }
+.tile.hl { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); transform: translateY(-1px); }
+.tile.target { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--no); transform: scale(1.06); }
+.opp-meta { display: flex; justify-content: space-between; gap: 8px; padding: 0 14px 12px; font-size: .8rem; color: var(--muted); flex-wrap: wrap; }
+.opp-meta b { color: var(--ink); }
 
 /* ---------- Log ---------- */
-.log { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 300px; overflow-y: auto; }
-.log li { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--ink); font-size: .88rem; border: 1px solid transparent; }
-.log li .av { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-weight: 900; font-size: .8rem; background: var(--ink-3); color: var(--chalk); }
-.log li.p0 .av { background: var(--ball); color: #1d0c02; }
-.log li.p1 .av { background: var(--p2); color: #fff; }
-.log li.ref { border-color: var(--line); }
-.log li.ref .av { background: var(--chalk); color: var(--ink); }
-.ans { font-family: var(--label); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: .78rem; padding: 2px 8px; border-radius: 6px; }
-.ans.y { background: rgba(53,211,152,.16); color: var(--yes); }
-.ans.n { background: rgba(255,90,107,.16); color: var(--no); }
-.log .empty { grid-template-columns: 1fr; color: var(--muted); }
+.log { list-style: none; margin: 0; padding: 8px; display: grid; gap: 2px; max-height: 320px; overflow-y: auto; }
+.log li { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 10px; align-items: center; padding: 8px; border-radius: 9px; font-size: .86rem; }
+.log li:nth-child(odd) { background: var(--surface-2); }
+.log .pill { font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
+.log .pill.y { background: var(--yes-soft); color: var(--yes); }
+.log .pill.n { background: var(--no-soft); color: var(--no); }
+.log .empty { grid-template-columns: 1fr; color: var(--muted); background: none !important; }
 
-/* ---------- Scouting report ---------- */
-details.scout { background: var(--ink-2); border: 1px solid var(--line); border-radius: 16px; }
-details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--label); font-weight: 700; text-transform: uppercase; letter-spacing: .14em; font-size: .82rem; color: var(--muted); }
+/* ---------- Facts ---------- */
+details.facts { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+details.facts summary { cursor: pointer; padding: 14px 16px; font-weight: 700; font-size: .95rem; }
 .tbl { overflow-x: auto; padding: 0 16px 16px; }
-.tbl table { border-collapse: collapse; width: 100%; min-width: 780px; font-size: .85rem; font-variant-numeric: tabular-nums; }
-.tbl th, .tbl td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
-.tbl th { font-family: var(--label); text-transform: uppercase; letter-spacing: .06em; font-size: .74rem; color: var(--muted); font-weight: 600; }
-.tbl td:first-child, .tbl th:first-child { text-align: left; }
+.tbl table { border-collapse: collapse; width: 100%; min-width: 820px; font-size: .84rem; font-variant-numeric: tabular-nums; }
+.tbl th, .tbl td { padding: 8px; border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
+.tbl th { font-size: .7rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.tbl td:first-child, .tbl th:first-child { text-align: left; font-weight: 600; }
 .tbl td.y { color: var(--yes); font-weight: 700; }
-.tbl td.n { color: #4b5678; }
-.footnote { color: var(--muted); font-size: .8rem; text-align: center; margin: 0; }
+.tbl td.n { color: var(--line-2); }
+.footnote { margin: 0; text-align: center; font-size: .8rem; color: var(--muted); }
 
-/* ---------- Overlays ---------- */
-.overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(16px, env(safe-area-inset-bottom, 0px)); background: rgba(5,8,16,.78); backdrop-filter: blur(6px); overflow-y: auto; }
-.overlay.opaque { background: radial-gradient(800px 500px at 50% 30%, #1a2445, var(--ink)); backdrop-filter: none; }
-.sheet { width: 100%; max-width: 560px; background: var(--ink-2); border: 1px solid var(--line-2); border-radius: 20px; padding: 24px; display: grid; gap: 18px; box-shadow: 0 30px 80px rgba(0,0,0,.6); animation: rise .35s cubic-bezier(.2,1.2,.4,1); }
-@keyframes rise { from { transform: translateY(18px) scale(.98); opacity: 0; } }
-.sheet h2 { margin: 0; font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: clamp(2rem, 6vw, 2.6rem); line-height: .9; }
-.sheet h2 span { color: var(--ball); }
-.sheet p { margin: 0; color: var(--muted); }
+/* ---------- Dialogs ---------- */
+.overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; overflow-y: auto; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); background: color-mix(in srgb, var(--bg) 55%, rgba(0,0,0,.55)); backdrop-filter: blur(8px); }
+.overlay.opaque { background: var(--bg); backdrop-filter: none; }
+.dialog { width: 100%; max-width: 540px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow-lg); padding: 24px; display: grid; gap: 18px; animation: rise .3s cubic-bezier(.2,1,.3,1); }
+@keyframes rise { from { transform: translateY(12px); opacity: 0; } }
+.dialog h2 { margin: 0; font-weight: 800; font-stretch: 75%; font-size: clamp(1.8rem, 5vw, 2.3rem); line-height: 1; text-transform: uppercase; }
+.dialog p { margin: 6px 0 0; color: var(--muted); }
 .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (max-width: 460px) { .modes { grid-template-columns: 1fr; } }
-.mode { text-align: left; border: 2px solid var(--line-2); background: var(--ink-3); border-radius: 14px; padding: 14px; cursor: pointer; display: grid; gap: 4px; transition: border-color .15s, background .15s; }
+.mode { display: grid; gap: 4px; text-align: left; padding: 14px; border-radius: 12px; border: 1.5px solid var(--line-2); background: var(--surface); cursor: pointer; transition: border-color .15s, background .15s; }
 .mode:hover { border-color: var(--muted); }
-.mode[aria-pressed="true"] { border-color: var(--ball); background: linear-gradient(180deg, rgba(240,122,46,.16), rgba(240,122,46,.04)), var(--ink-3); }
-.mode .t { font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: 1.45rem; line-height: 1; }
-.mode .d { color: var(--muted); font-size: .88rem; }
-.mode .ic { display: flex; gap: 4px; margin-bottom: 6px; }
-.mode .ic i { width: 22px; height: 22px; border-radius: 50%; display: block; }
+.mode[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.mode .t { font-weight: 800; font-size: 1.05rem; }
+.mode .d { font-size: .86rem; color: var(--muted); }
+.mode .dots { display: flex; gap: 4px; margin-bottom: 4px; }
+.mode .dots i { width: 14px; height: 14px; border-radius: 50%; }
 .field { display: grid; gap: 6px; }
-.field label, .field .flabel { font-family: var(--label); font-weight: 700; text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; color: var(--muted); }
-.field input { background: var(--ink); border: 1px solid var(--line-2); border-radius: 10px; padding: 10px 12px; font-size: 1rem; width: 100%; }
-.field input:focus { border-color: var(--ball); outline: none; }
+.field input { min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--surface); }
+.field input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
 .names { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (max-width: 460px) { .names { grid-template-columns: 1fr; } }
 .diff { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.diff button { border: 1px solid var(--line-2); background: var(--ink-3); border-radius: 10px; padding: 10px 6px; cursor: pointer; display: grid; gap: 2px; text-align: center; }
-.diff button b { font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: 1.1rem; }
+.diff button { display: grid; gap: 2px; padding: 10px 8px; border-radius: 10px; border: 1.5px solid var(--line-2); background: var(--surface); cursor: pointer; text-align: center; }
+.diff button b { font-weight: 700; }
 .diff button span { font-size: .75rem; color: var(--muted); }
-.diff button[aria-pressed="true"] { border-color: var(--ball); background: rgba(240,122,46,.14); }
-.rules { margin: 0; padding-left: 18px; color: var(--muted); font-size: .9rem; display: grid; gap: 3px; }
-.sheet .row { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
-.sheet .row .btn { min-width: 120px; }
-.handoff { text-align: center; justify-items: center; }
-.handoff .big { font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: clamp(2.6rem, 10vw, 4rem); line-height: .9; color: var(--ball); overflow-wrap: anywhere; }
-.result { text-align: center; justify-items: center; }
-.result h2.win { color: var(--ball); }
-.pair { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; }
-.pair > div { width: 128px; display: grid; gap: 6px; }
-.pair .lbl { font-family: var(--label); text-transform: uppercase; letter-spacing: .1em; font-size: .72rem; color: var(--muted); }
+.diff button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.rules { margin: 0; padding-left: 18px; color: var(--muted); font-size: .88rem; display: grid; gap: 3px; }
+.row { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.center { text-align: center; justify-items: center; }
+.big-name { font-weight: 800; font-stretch: 75%; font-size: clamp(2.6rem, 10vw, 3.8rem); line-height: .95; text-transform: uppercase; color: var(--accent); overflow-wrap: anywhere; }
+.pair { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.pair > div { width: 140px; display: grid; gap: 6px; }
 .pair .card { cursor: default; }
-
-.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(20px); background: var(--chalk); color: var(--ink); padding: 10px 16px; border-radius: 12px; font-weight: 600; opacity: 0; transition: .25s; pointer-events: none; z-index: 60; max-width: calc(100% - 32px); text-align: center; }
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.pair .card:hover { transform: none; box-shadow: var(--shadow); }
+h2.win { color: var(--accent); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -324,24 +311,16 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
 </style>
 </head>
 <body>
-<div class="court-lines" aria-hidden="true">
-  <svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice"><g fill="none" stroke="#fff" stroke-width="3">
-    <line x1="500" y1="0" x2="500" y2="600"/><circle cx="500" cy="300" r="90"/><circle cx="500" cy="300" r="30"/>
-    <rect x="0" y="200" width="190" height="200"/><circle cx="190" cy="300" r="60"/><path d="M0 40 L140 40 A270 270 0 0 1 140 560 L0 560"/>
-    <rect x="810" y="200" width="190" height="200"/><circle cx="810" cy="300" r="60"/><path d="M1000 40 L860 40 A270 270 0 0 0 860 560 L1000 560"/>
-  </g></svg>
-</div>
-
 <div class="wrap">
-  <header class="top">
+  <header class="appbar">
     <div class="brand">
-      <div class="logo" aria-hidden="true"><svg viewBox="0 0 50 50"><g fill="none" stroke="rgba(40,12,0,.6)" stroke-width="1.6"><line x1="25" y1="0" x2="25" y2="50"/><line x1="0" y1="25" x2="50" y2="25"/><path d="M8 4 Q21 25 8 46"/><path d="M42 4 Q29 25 42 46"/></g></svg></div>
+      <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="12" r="9.5"/><path d="M12 2.5v19M2.5 12h19M5.2 5.2c3.2 3.6 3.2 10 0 13.6M18.8 5.2c-3.2 3.6-3.2 10 0 13.6"/></svg></div>
       <div>
-        <h1>Who's That <span>Baller?</span></h1>
-        <p>24 NBA greats &middot; ask, flip, call your shot</p>
+        <div class="brand-name">Who's That Baller?</div>
+        <div class="brand-sub">Guess the mystery NBA player before your opponent does</div>
       </div>
     </div>
-    <div class="top-actions">
+    <div class="bar-actions">
       <div class="seg" role="group" aria-label="Game mode">
         <button id="segCpu" aria-pressed="true">vs CPU</button>
         <button id="segPvp" aria-pressed="false">2 Players</button>
@@ -350,94 +329,86 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
     </div>
   </header>
 
-  <main class="game">
-    <section class="tray area-board" aria-label="Your board">
-      <div class="tray-head">
-        <div class="secret" id="secret"></div>
-        <div class="tray-title">
-          <h2 id="boardTitle">Your board</h2>
-          <div class="left" id="leftCount">24 still standing</div>
-        </div>
-        <div class="tray-tools">
-          <label class="switch" for="autoFlip"><input type="checkbox" id="autoFlip"> Auto-flip</label>
-          <button class="btn" id="resetFlips">Stand all up</button>
+  <section class="scorebug" aria-label="Scoreboard">
+    <div class="team" id="side0"><span class="sw"></span><div style="min-width:0"><div class="tn" id="name0">You</div><div class="tw num" id="wins0">0 wins</div></div><div class="tc num"><span id="count0">24</span><small>left</small></div></div>
+    <div class="mid"><div class="turn" id="turnLbl">Your turn</div><div class="qc num">Question <span id="qnum">0</span></div></div>
+    <div class="team right" id="side1"><span class="sw"></span><div style="min-width:0"><div class="tn" id="name1">CPU</div><div class="tw num" id="wins1">0 wins</div></div><div class="tc num"><small>left</small><span id="count1">24</span></div></div>
+  </section>
+
+  <main class="layout">
+    <aside class="pane q-pane area-q" id="qpane" aria-label="Questions">
+      <div class="pane-head"><span class="pane-title">Questions</span><span class="label num" id="askedCount">0 of 16 asked</span></div>
+      <div class="qlist" id="questions"></div>
+      <div class="q-foot">
+        <div class="preview" id="preview">Pick a question from the list.</div>
+        <div class="actions">
+          <button class="btn primary wide" id="askBtn" disabled>Ask question</button>
+          <button class="btn" id="endTurnBtn" disabled>End turn</button>
+          <button class="btn danger" id="guessBtn">Make a guess</button>
         </div>
       </div>
+    </aside>
+
+    <section class="pane area-board" aria-label="Your board">
+      <div class="pane-head board-head">
+        <div style="min-width:0"><div class="board-title" id="boardTitle">Your board</div><div class="board-sub num" id="leftCount">24 players standing</div></div>
+        <div class="tools">
+          <label class="toggle" for="autoFlip"><input type="checkbox" id="autoFlip"> Auto-eliminate</label>
+          <button class="btn ghost" id="resetFlips">Reset board</button>
+        </div>
+      </div>
+      <div style="padding-top:14px"><div class="secret" id="secret"></div></div>
       <div class="board" id="board"></div>
     </section>
 
-    <section class="jumbo area-jumbo" aria-live="polite">
-      <div class="score-row">
-        <div class="side" id="side0"><span class="who" id="name0">You</span><span class="count"><span id="count0">24</span><small>left</small></span><span class="wins" id="wins0">0 wins</span></div>
-        <div class="clock"><span class="lbl">Q</span><span class="num" id="qnum">0</span></div>
-        <div class="side right" id="side1"><span class="who" id="name1">CPU</span><span class="count"><small>left</small><span id="count1">24</span></span><span class="wins" id="wins1">0 wins</span></div>
-      </div>
-      <div class="screen">
-        <div class="asker" id="jAsker">Tip-off</div>
-        <div class="q" id="jText">Pick a question to start</div>
-        <div class="foot"><span id="jStamp"></span><span class="sub" id="jSub"></span></div>
+    <section class="pane live area-live" aria-live="polite" aria-label="Live">
+      <div class="pane-head"><span class="livetag">Live</span><span class="label" id="liveCtx">Tip-off</span></div>
+      <div class="live-body">
+        <div class="asker"><span class="av" id="jAv">&middot;</span><span id="jAsker">Waiting for the first question</span></div>
+        <p class="lq" id="jText">Pick a question to start.</p>
+        <div class="lfoot"><span id="jStamp"></span><span class="lsub" id="jSub"></span></div>
       </div>
     </section>
 
-    <section class="panel area-opp" aria-label="Opponent's board">
-      <div class="panel-head">
-        <span class="eyebrow" id="oppTitle">CPU's board</span>
-        <span class="live">Live</span>
-      </div>
-      <div class="opp-board" id="oppBoard"></div>
-      <div class="opp-meta">
-        <span><b id="oppLeft">24</b> standing</span>
-        <span class="opp-secret"><i></i> Secret player hidden</span>
-      </div>
+    <section class="pane area-opp" aria-label="Opponent's board">
+      <div class="pane-head"><span class="pane-title" id="oppTitle">CPU's board</span><span class="label">Updates live</span></div>
+      <div class="opp-grid" id="oppBoard"></div>
+      <div class="opp-meta"><span><b class="num" id="oppLeft">24</b> standing</span><span>Secret player hidden</span></div>
     </section>
 
-    <section class="panel dock area-dock" id="dock" aria-label="Ask a question">
-      <div class="panel-head"><span class="eyebrow">Ask a question</span><span class="eyebrow" id="askedCount">0 / 16 used</span></div>
-      <div class="qbody">
-        <div id="questions"></div>
-        <div class="preview" id="preview">Choose a question above.</div>
-      </div>
-      <div class="lockmsg" id="lockmsg" hidden>CPU has the ball</div>
-      <div class="actions">
-        <button class="btn primary" id="askBtn" disabled>Ask</button>
-        <button class="btn" id="endTurnBtn" disabled>End turn</button>
-        <button class="btn danger" id="guessBtn">Guess</button>
-      </div>
-    </section>
-
-    <section class="panel area-log" aria-label="Play-by-play">
-      <div class="panel-head"><span class="eyebrow">Play-by-play</span></div>
+    <section class="pane area-log" aria-label="Play-by-play">
+      <div class="pane-head"><span class="pane-title">Play-by-play</span></div>
       <ul class="log" id="log"></ul>
     </section>
   </main>
 
-  <details class="scout">
-    <summary>Scouting report &middot; every player's facts</summary>
+  <details class="facts">
+    <summary>Player facts</summary>
     <div class="tbl"><table id="scoutTable"></table></div>
   </details>
   <p class="footnote">Player facts are as of the 2025&ndash;26 season. "Ever played for" counts any regular-season stint. Fan-made game, not affiliated with the NBA.</p>
 </div>
 
 <div class="overlay" id="pregame" hidden>
-  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pgTitle">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="pgTitle">
     <div>
-      <h2 id="pgTitle">Pick your <span>matchup</span></h2>
-      <p>Each side gets a secret NBA player. Ask yes/no questions, flip down who's ruled out, and name the other player first.</p>
+      <h2 id="pgTitle">New game</h2>
+      <p>Each side gets a secret NBA player. Ask yes/no questions, eliminate who doesn't fit, and name the other player first.</p>
     </div>
     <div class="modes">
       <button class="mode" id="modeCpu" aria-pressed="true">
-        <span class="ic"><i style="background:var(--ball)"></i><i style="background:var(--muted)"></i></span>
+        <span class="dots"><i style="background:var(--accent)"></i><i style="background:var(--muted)"></i></span>
         <span class="t">vs CPU</span>
         <span class="d">Watch the CPU's board and questions live.</span>
       </button>
       <button class="mode" id="modePvp" aria-pressed="false">
-        <span class="ic"><i style="background:var(--ball)"></i><i style="background:var(--p2)"></i></span>
+        <span class="dots"><i style="background:var(--accent)"></i><i style="background:var(--p2)"></i></span>
         <span class="t">2 Players</span>
-        <span class="d">Pass and play on one device. No peeking.</span>
+        <span class="d">Pass and play on one device.</span>
       </button>
     </div>
     <div class="field" id="cpuOpts">
-      <span class="flabel">CPU difficulty</span>
+      <span class="label">CPU difficulty</span>
       <div class="diff" role="group" aria-label="CPU difficulty">
         <button data-diff="easy" aria-pressed="false"><b>Rookie</b><span>Asks at random</span></button>
         <button data-diff="normal" aria-pressed="true"><b>All-Star</b><span>Plays smart</span></button>
@@ -445,45 +416,45 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
       </div>
     </div>
     <div class="names" id="pvpOpts" hidden>
-      <div class="field"><label for="p1Name">Player 1</label><input id="p1Name" maxlength="16" placeholder="Player 1" autocomplete="off"></div>
-      <div class="field"><label for="p2Name">Player 2</label><input id="p2Name" maxlength="16" placeholder="Player 2" autocomplete="off"></div>
+      <div class="field"><label class="label" for="p1Name">Player 1</label><input id="p1Name" maxlength="16" placeholder="Player 1" autocomplete="off"></div>
+      <div class="field"><label class="label" for="p2Name">Player 2</label><input id="p2Name" maxlength="16" placeholder="Player 2" autocomplete="off"></div>
     </div>
     <ul class="rules">
-      <li>One question per turn, then flip and end your turn.</li>
+      <li>One question per turn. Eliminate players, then end your turn.</li>
       <li>Guess any time on your turn. A wrong guess loses the game.</li>
     </ul>
     <div class="row">
-      <button class="btn" id="pgCancel">Cancel</button>
-      <button class="btn primary" id="pgStart">Tip off</button>
+      <button class="btn ghost" id="pgCancel">Cancel</button>
+      <button class="btn primary" id="pgStart">Start game</button>
     </div>
   </div>
 </div>
 
 <div class="overlay opaque" id="handoff" hidden>
-  <div class="sheet handoff" role="dialog" aria-modal="true" aria-labelledby="hoName">
-    <span class="eyebrow">Pass the device to</span>
-    <div class="big" id="hoName">Player 2</div>
-    <p id="hoText">Everyone else, look away.</p>
+  <div class="dialog center" role="dialog" aria-modal="true" aria-labelledby="hoName">
+    <span class="label">Pass the device to</span>
+    <div class="big-name" id="hoName">Player 2</div>
+    <p id="hoText" style="margin:0">Everyone else, look away.</p>
     <button class="btn primary" id="hoGo">I'm ready</button>
   </div>
 </div>
 
 <div class="overlay" id="result" hidden>
-  <div class="sheet result" role="dialog" aria-modal="true" aria-labelledby="resTitle">
-    <h2 id="resTitle">You win</h2>
-    <p id="resText"></p>
+  <div class="dialog center" role="dialog" aria-modal="true" aria-labelledby="resTitle">
+    <div>
+      <h2 id="resTitle">You win</h2>
+      <p id="resText"></p>
+    </div>
     <div class="pair">
-      <div><span class="lbl" id="resLbl0">Your player</span><div id="resCard0"></div></div>
-      <div><span class="lbl" id="resLbl1">CPU's player</span><div id="resCard1"></div></div>
+      <div><span class="label" id="resLbl0">Your player</span><div id="resCard0"></div></div>
+      <div><span class="label" id="resLbl1">CPU's player</span><div id="resCard1"></div></div>
     </div>
     <div class="row" style="justify-content:center">
       <button class="btn" id="resChange">Change mode</button>
-      <button class="btn primary" id="resAgain">Run it back</button>
+      <button class="btn primary" id="resAgain">Play again</button>
     </div>
   </div>
 </div>
-
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 (() => {
@@ -515,24 +486,25 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
     { id:'yao',      name:'Yao Ming',                nick:'The Great Wall',     num:11, pos:'C', ht:"7'6\"",  in:90, ring:0, mvp:0, first:1, college:0, intl:1, pre2000:0, s2020:0, lakers:0, celtics:0, texas:1, c1:'#ce1141', c2:'#ffffff' },
   ];
   const byId = Object.fromEntries(PLAYERS.map(p => [p.id, p]));
+  const POS = { G: 'Guard', F: 'Forward', C: 'Center' };
 
   const QUESTIONS = [
-    { id:'guard',   group:'Position',           chip:'Guard?',               text:'Is your player a guard?',                                         test:p => p.pos === 'G' },
-    { id:'forward', group:'Position',           chip:'Forward?',             text:'Is your player a forward?',                                       test:p => p.pos === 'F' },
-    { id:'center',  group:'Position',           chip:'Center?',              text:'Is your player a center?',                                        test:p => p.pos === 'C' },
-    { id:'tall',    group:'Size & number',      chip:"6'10\" or taller?",    text:"Is your player listed at 6'10\" or taller?",                      test:p => p.in >= 82 },
-    { id:'num30',   group:'Size & number',      chip:'#30 or higher?',       text:"Is your player's jersey number 30 or higher?",                    test:p => p.num >= 30 },
-    { id:'single',  group:'Size & number',      chip:'Single-digit #?',      text:"Is your player's jersey number a single digit?",                  test:p => p.num <= 9 },
-    { id:'ring',    group:'Hardware',           chip:'Champion?',            text:'Has your player won an NBA championship?',                        test:p => !!p.ring },
-    { id:'mvp',     group:'Hardware',           chip:'MVP?',                 text:'Has your player won a regular-season MVP?',                       test:p => !!p.mvp },
-    { id:'first',   group:'Path to the league', chip:'No. 1 pick?',          text:'Was your player the No. 1 overall draft pick?',                   test:p => !!p.first },
-    { id:'college', group:'Path to the league', chip:'Played college?',      text:'Did your player play college basketball?',                        test:p => !!p.college },
-    { id:'intl',    group:'Path to the league', chip:'Born abroad?',         text:'Was your player born outside the United States?',                 test:p => !!p.intl },
-    { id:'pre2000', group:'Era',                chip:'Debut before 2000?',   text:"Did your player's NBA career start before 2000?",                 test:p => !!p.pre2000 },
-    { id:'s2020',   group:'Era',                chip:'Played in the 2020s?', text:'Has your player played an NBA game in the 2020s?',                test:p => !!p.s2020 },
-    { id:'lakers',  group:'Teams',              chip:'Ever a Laker?',        text:'Did your player ever play for the Lakers?',                       test:p => !!p.lakers },
-    { id:'celtics', group:'Teams',              chip:'Ever a Celtic?',       text:'Did your player ever play for the Celtics?',                      test:p => !!p.celtics },
-    { id:'texas',   group:'Teams',              chip:'Texas team?',          text:'Did your player ever play for the Rockets, Mavericks or Spurs?',  test:p => !!p.texas },
+    { id:'guard',   group:'Position',           chip:'Guard',                    text:'Is your player a guard?',                                         test:p => p.pos === 'G' },
+    { id:'forward', group:'Position',           chip:'Forward',                  text:'Is your player a forward?',                                       test:p => p.pos === 'F' },
+    { id:'center',  group:'Position',           chip:'Center',                   text:'Is your player a center?',                                        test:p => p.pos === 'C' },
+    { id:'tall',    group:'Size and number',    chip:"6'10\" or taller",         text:"Is your player listed at 6'10\" or taller?",                      test:p => p.in >= 82 },
+    { id:'num30',   group:'Size and number',    chip:'Jersey #30 or higher',     text:"Is your player's jersey number 30 or higher?",                    test:p => p.num >= 30 },
+    { id:'single',  group:'Size and number',    chip:'Single-digit jersey',      text:"Is your player's jersey number a single digit?",                  test:p => p.num <= 9 },
+    { id:'ring',    group:'Honors',             chip:'NBA champion',             text:'Has your player won an NBA championship?',                        test:p => !!p.ring },
+    { id:'mvp',     group:'Honors',             chip:'Regular-season MVP',       text:'Has your player won a regular-season MVP?',                       test:p => !!p.mvp },
+    { id:'first',   group:'Path to the league', chip:'No. 1 overall pick',       text:'Was your player the No. 1 overall draft pick?',                   test:p => !!p.first },
+    { id:'college', group:'Path to the league', chip:'Played college ball',      text:'Did your player play college basketball?',                        test:p => !!p.college },
+    { id:'intl',    group:'Path to the league', chip:'Born outside the US',      text:'Was your player born outside the United States?',                 test:p => !!p.intl },
+    { id:'pre2000', group:'Era',                chip:'Debuted before 2000',      text:"Did your player's NBA career start before 2000?",                 test:p => !!p.pre2000 },
+    { id:'s2020',   group:'Era',                chip:'Played in the 2020s',      text:'Has your player played an NBA game in the 2020s?',                test:p => !!p.s2020 },
+    { id:'lakers',  group:'Teams',              chip:'Ever a Laker',             text:'Did your player ever play for the Lakers?',                       test:p => !!p.lakers },
+    { id:'celtics', group:'Teams',              chip:'Ever a Celtic',            text:'Did your player ever play for the Celtics?',                      test:p => !!p.celtics },
+    { id:'texas',   group:'Teams',              chip:'Rockets, Mavs or Spurs',   text:'Did your player ever play for the Rockets, Mavericks or Spurs?',  test:p => !!p.texas },
   ];
   const qById = Object.fromEntries(QUESTIONS.map(q => [q.id, q]));
 
@@ -547,6 +519,7 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
   const lum = hex => { const h = hex.replace('#',''); return 0.299*parseInt(h.substr(0,2),16) + 0.587*parseInt(h.substr(2,2),16) + 0.114*parseInt(h.substr(4,2),16); };
   const textOn = p => (Math.abs(lum(p.c1) - lum(p.c2)) > 60) ? p.c2 : (lum(p.c1) > 150 ? '#111111' : '#ffffff');
   const verb = (name, base, s) => name === 'You' ? base : s;
+  const metaLine = p => `${POS[p.pos]} · ${p.ht} · #${p.num}`;
 
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
@@ -554,37 +527,27 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
   };
 
   function jerseySVG(p) {
-    const txt = textOn(p), stroke = 'rgba(0,0,0,.28)';
+    const txt = textOn(p), stroke = 'rgba(0,0,0,.25)';
     const nm = surname(p.name).toUpperCase();
     const fs = nm.length > 12 ? 7 : nm.length > 9 ? 8.5 : 10;
     return `<svg viewBox="0 0 100 110" aria-hidden="true">
       <path d="M30 6 L41 6 Q50 22 59 6 L70 6 L72 20 Q78 31 88 34 L86 106 L14 106 L12 34 Q22 31 28 20 Z" fill="${p.c1}" stroke="${stroke}" stroke-width="1.5" stroke-linejoin="round"/>
       <path d="M41 6 Q50 22 59 6" fill="none" stroke="${txt}" stroke-width="3"/>
       <path d="M28 20 Q22 31 12 34 M72 20 Q78 31 88 34" fill="none" stroke="${txt}" stroke-width="3"/>
-      <text x="50" y="44" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="${fs}" fill="${txt}" letter-spacing=".5">${esc(nm)}</text>
-      <text x="50" y="86" text-anchor="middle" font-family="Big Shoulders Display, Impact, sans-serif" font-weight="900" font-size="40" fill="${txt}" stroke="${stroke}" stroke-width=".6">${p.num}</text>
+      <text x="50" y="44" text-anchor="middle" font-family="Archivo, Arial Narrow, sans-serif" font-stretch="75%" font-weight="700" font-size="${fs}" fill="${txt}" letter-spacing=".4">${esc(nm)}</text>
+      <text x="50" y="87" text-anchor="middle" font-family="Archivo, Impact, sans-serif" font-stretch="75%" font-weight="800" font-size="40" fill="${txt}">${p.num}</text>
     </svg>`;
   }
-  const BALL = `<svg viewBox="0 0 100 138" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g fill="none" stroke="rgba(40,12,0,.5)" stroke-width="2.4"><line x1="50" y1="0" x2="50" y2="138"/><line x1="0" y1="69" x2="100" y2="69"/><path d="M14 0 Q44 69 14 138"/><path d="M86 0 Q56 69 86 138"/></g></svg>`;
-  const cardInner = p => `<div class="inner">
-      <div class="face front">
-        <span class="tag pos">${p.pos}</span><span class="tag ht">${p.ht}</span>
-        <div class="jersey">${jerseySVG(p)}</div>
-        <div class="meta"><div class="nm">${esc(p.name)}</div><div class="nk">${esc(p.nick)}</div></div>
-      </div>
-      <div class="face back">${BALL}<span class="nm">${esc(surname(p.name))}</span></div>
-    </div>`;
-  const staticCard = p => `<div class="card" style="--c:${p.c1};cursor:default">${cardInner(p)}</div>`;
+  const cardInner = p => `<div class="art">${jerseySVG(p)}</div><div class="info"><div class="nm">${esc(p.name)}</div><div class="meta">${esc(metaLine(p))}</div></div><span class="x" aria-hidden="true"></span>`;
+  const staticCard = p => `<div class="card" style="--c:${p.c1}">${cardInner(p)}</div>`;
 
   // ---------- State ----------
-  let G = null;
-  let dealT;
+  let G = null, dealT;
   const setup = { mode: store.get('wtb-mode', 'cpu'), diff: store.get('wtb-diff', 'normal'), names: store.get('wtb-names', ['', '']) };
   const wins = store.get('wtb-wins', {});
-
   const cur = () => G.players[G.cur];
   const opp = () => G.players[1 - G.cur];
-  // The hardwood shows the human's board in CPU mode, and the current player's board in 2-player mode.
+  // Your board is the human's in CPU mode and the current player's in 2-player mode.
   const viewerIdx = () => G.mode === 'cpu' ? 0 : G.cur;
   const winKey = i => `${G.mode}:${G.players[i].name}`;
 
@@ -599,65 +562,67 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
     G = {
       token, mode: cfg.mode, diff: cfg.diff,
       players: [
-        { name: n0, secret: s0, flipped: new Set(), asked: new Map(), cpu: false },
-        { name: n1, secret: s1, flipped: new Set(), asked: new Map(), cpu: isCpu },
+        { name: n0, secret: s0, out: new Set(), asked: new Map(), cpu: false },
+        { name: n1, secret: s1, out: new Set(), asked: new Map(), cpu: isCpu },
       ],
       cur: 0, phase: 'ask', selected: null, guessing: false, guessPick: null, qcount: 0, log: [],
     };
     $('result').hidden = true; $('handoff').hidden = true;
-    const bd = $('board'); bd.classList.remove('deal'); void bd.offsetWidth; bd.classList.add('deal');
-    clearTimeout(dealT); dealT = setTimeout(() => bd.classList.remove('deal'), 1400);
     $('oppBoard').classList.remove('scanning');
     $('oppBoard').querySelectorAll('.tile').forEach(t => t.classList.remove('hl', 'target'));
-    if (isCpu) setJumbo('Tip-off', 'Your ball. Pick a question.', null, 'You and the CPU each have a secret player.');
-    else setJumbo(`${n0} has the ball`, 'Pick a question to start', null, 'Take turns asking. The device gets passed between turns.');
+    const bd = $('board'); bd.classList.remove('deal'); void bd.offsetWidth; bd.classList.add('deal');
+    clearTimeout(dealT); dealT = setTimeout(() => bd.classList.remove('deal'), 1400);
+    setLive(null, 'Tip-off', isCpu ? 'Your move. Pick a question.' : `${n0} starts. Pick a question.`, null, isCpu ? 'You and the CPU each have a secret player.' : 'The device gets passed between turns.');
     renderAll();
     if (!isCpu) handoff(0, true);
   }
 
   // ---------- Rendering ----------
-  function renderSeg() {
-    $('segCpu').setAttribute('aria-pressed', String(G.mode === 'cpu'));
-    $('segPvp').setAttribute('aria-pressed', String(G.mode === 'pvp'));
-  }
-
   function renderBoard() {
     const b = $('board');
-    if (!b.children.length) b.innerHTML = PLAYERS.map((p, i) => `<button class="card" data-id="${p.id}" style="--c:${p.c1};--i:${i}">${cardInner(p)}</button>`).join('');
+    if (!b.children.length) b.innerHTML = PLAYERS.map((p, i) => `<button class="card" data-id="${p.id}" style="--c:${p.c1};--i:${i}" title="${esc(p.nick)}">${cardInner(p)}</button>`).join('');
     const v = G.players[viewerIdx()];
     b.classList.toggle('guessing', G.guessing);
     for (const el of b.children) {
-      const id = el.dataset.id, f = v.flipped.has(id);
-      el.classList.toggle('flipped', f);
+      const id = el.dataset.id, o = v.out.has(id);
+      el.classList.toggle('out', o);
       el.classList.toggle('pick', G.guessing && G.guessPick === id);
-      el.setAttribute('aria-pressed', String(f));
-      el.setAttribute('aria-label', `${byId[id].name}${f ? ', flipped down' : ''}`);
+      el.setAttribute('aria-pressed', String(o));
+      el.setAttribute('aria-label', `${byId[id].name}${o ? ', eliminated' : ''}`);
     }
     $('boardTitle').textContent = G.mode === 'cpu' ? 'Your board' : `${v.name}'s board`;
-    $('leftCount').textContent = `${PLAYERS.length - v.flipped.size} still standing`;
+    renderLeft();
     const sp = byId[v.secret];
-    $('secret').innerHTML = `<div class="mini-jersey" style="background:color-mix(in srgb, ${sp.c1} 25%, #fbf7f0)">${jerseySVG(sp)}</div>
-      <div style="min-width:0"><div class="lbl">${G.mode === 'cpu' ? 'Your' : esc(v.name) + "'s"} secret player</div><div class="nm">${esc(sp.name)}</div></div>`;
+    $('secret').innerHTML = `<div class="sj" style="--c:${sp.c1}">${jerseySVG(sp)}</div>
+      <div style="min-width:0"><div class="label">${G.mode === 'cpu' ? 'Your' : esc(v.name) + "'s"} secret player</div><div class="nm">${esc(sp.name)}</div><div class="meta">${esc(sp.nick)} · ${esc(metaLine(sp))}</div></div>
+      <div class="lock">${G.mode === 'cpu' ? 'The CPU is trying to work out who this is.' : 'Keep this hidden from ' + esc(G.players[1 - viewerIdx()].name) + '.'}</div>`;
+  }
+  function renderLeft() {
+    const v = G.players[viewerIdx()];
+    const n = PLAYERS.length - v.out.size;
+    $('leftCount').textContent = `${n} player${n === 1 ? '' : 's'} standing`;
   }
 
   function renderOpp() {
     const ob = $('oppBoard');
-    if (!ob.children.length) ob.innerHTML = PLAYERS.map(p => `<div class="tile" data-id="${p.id}" style="--c:${p.c1};--t:${textOn(p)}" title="${esc(p.name)}"><div class="ti"><div class="tf"><b>${p.num}</b><span>${esc(surname(p.name))}</span></div><div class="tb"></div></div></div>`).join('');
+    if (!ob.children.length) ob.innerHTML = PLAYERS.map(p => `<div class="tile" data-id="${p.id}" style="--c:${p.c1};--t:${textOn(p)}" title="${esc(p.name)}"><b>${p.num}</b><span>${esc(surname(p.name))}</span></div>`).join('');
     const o = G.players[1 - viewerIdx()];
-    for (const el of ob.children) el.classList.toggle('out', o.flipped.has(el.dataset.id));
+    for (const el of ob.children) el.classList.toggle('out', o.out.has(el.dataset.id));
     $('oppTitle').textContent = `${o.name}'s board`;
-    $('oppLeft').textContent = PLAYERS.length - o.flipped.size;
+    $('oppLeft').textContent = PLAYERS.length - o.out.size;
   }
 
   function renderScore() {
     G.players.forEach((p, i) => {
       $('name' + i).textContent = p.name;
-      $('count' + i).textContent = PLAYERS.length - p.flipped.size;
+      $('count' + i).textContent = PLAYERS.length - p.out.size;
       const w = wins[winKey(i)] || 0;
       $('wins' + i).textContent = `${w} win${w === 1 ? '' : 's'}`;
       $('side' + i).classList.toggle('active', G.phase !== 'over' && G.cur === i);
     });
     $('qnum').textContent = G.qcount;
+    const c = cur();
+    $('turnLbl').textContent = G.phase === 'over' ? 'Final' : (c.name === 'You' ? 'Your turn' : `${c.name}'s turn`);
   }
 
   function renderDock() {
@@ -666,61 +631,68 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
     const canAsk = humanTurn && G.phase === 'ask' && !G.guessing;
     const asker = me.cpu ? G.players[0] : me;
     const groups = [...new Set(QUESTIONS.map(q => q.group))];
-    $('questions').innerHTML = groups.map(g => `<div class="qgroup"><div class="glabel">${g}</div><div class="qs">${
+    $('questions').innerHTML = groups.map(g => `<div class="qgroup"><span class="label">${g}</span>${
       QUESTIONS.filter(q => q.group === g).map(q => {
         const a = asker.asked.get(q.id);
-        const cls = a === undefined ? '' : (a ? ' asked-yes' : ' asked-no');
-        return `<button class="chip${G.selected === q.id ? ' sel' : ''}${cls}" data-q="${q.id}" ${(!canAsk || a !== undefined) ? 'disabled' : ''}>${esc(q.chip)}</button>`;
-      }).join('')}</div></div>`).join('');
-    $('askedCount').textContent = `${asker.asked.size} / ${QUESTIONS.length} used`;
+        const st = a === undefined ? '<span class="st dot"></span>' : `<span class="st ${a ? 'y' : 'n'}">${a ? 'Yes' : 'No'}</span>`;
+        return `<button class="qrow${G.selected === q.id ? ' sel' : ''}${a !== undefined ? ' asked' : ''}" data-q="${q.id}" ${(!canAsk || a !== undefined) ? 'disabled' : ''}><span>${esc(q.chip)}</span>${st}</button>`;
+      }).join('')}</div>`).join('');
+    $('qpane').classList.toggle('q-locked', !canAsk);
+    $('askedCount').textContent = `${asker.asked.size} of ${QUESTIONS.length} asked`;
 
     const pv = $('preview');
-    if (G.guessing) {
-      pv.classList.add('ready');
-      pv.innerHTML = G.guessPick ? `Lock in <b>${esc(byId[G.guessPick].name)}</b>? A miss loses the game.` : 'Tap a standing player on your board to pick your guess.';
-    } else if (canAsk && G.selected) { pv.classList.add('ready'); pv.textContent = qById[G.selected].text; }
-    else if (G.phase === 'flip' && humanTurn) { pv.classList.remove('ready'); pv.textContent = 'Flip down everyone the answer rules out, then end your turn.'; }
-    else { pv.classList.remove('ready'); pv.textContent = 'Choose a question above.'; }
-
-    const locked = (G.mode === 'cpu' && me.cpu) || G.phase === 'over';
-    $('dock').classList.toggle('locked', locked);
-    $('lockmsg').hidden = !locked;
-    $('lockmsg').innerHTML = G.phase === 'over'
-      ? '<b>Final buzzer</b><span>Start a new game to play again.</span>'
-      : '<b>CPU has the ball</b><span>Watch its board above. Your questions come back next turn.</span>';
+    pv.classList.remove('ready');
+    if (G.phase === 'over') pv.textContent = 'Game over. Start a new game to play again.';
+    else if (me.cpu) pv.textContent = 'The CPU is taking its turn. Follow it in the Live panel.';
+    else if (G.guessing) pv.innerHTML = G.guessPick ? `Lock in <b>${esc(byId[G.guessPick].name)}</b>? A wrong guess loses the game.` : 'Select a standing player on your board.';
+    else if (canAsk && G.selected) { pv.classList.add('ready'); pv.textContent = qById[G.selected].text; }
+    else if (G.phase === 'flip' && humanTurn) pv.textContent = 'Eliminate everyone the answer rules out, then end your turn.';
+    else pv.textContent = 'Pick a question from the list.';
 
     const askBtn = $('askBtn'), endBtn = $('endTurnBtn'), gBtn = $('guessBtn');
-    if (G.guessing) { askBtn.textContent = 'Lock in'; askBtn.className = 'btn go'; askBtn.disabled = !G.guessPick; }
-    else { askBtn.textContent = 'Ask'; askBtn.className = 'btn primary'; askBtn.disabled = !(canAsk && G.selected); }
+    if (G.guessing) { askBtn.textContent = 'Lock in guess'; askBtn.className = 'btn go wide'; askBtn.disabled = !G.guessPick; }
+    else { askBtn.textContent = 'Ask question'; askBtn.className = 'btn primary wide'; askBtn.disabled = !(canAsk && G.selected); }
     endBtn.disabled = !(humanTurn && G.phase === 'flip' && !G.guessing);
     endBtn.className = endBtn.disabled ? 'btn' : 'btn primary';
     gBtn.disabled = !(humanTurn && (G.phase === 'ask' || G.phase === 'flip'));
     gBtn.classList.toggle('on', G.guessing);
-    gBtn.textContent = G.guessing ? 'Cancel' : 'Guess';
+    gBtn.textContent = G.guessing ? 'Cancel guess' : 'Make a guess';
   }
 
   function renderLog() {
     const ul = $('log');
-    if (!G.log.length) { ul.innerHTML = '<li class="empty">Tip-off. Questions and answers show up here.</li>'; return; }
+    if (!G.log.length) { ul.innerHTML = '<li class="empty">Questions and answers appear here.</li>'; return; }
     ul.innerHTML = G.log.slice().reverse().map(e => {
-      const av = e.who === 'ref' ? 'R' : esc(G.players[e.who].name.charAt(0).toUpperCase());
-      const cls = e.who === 'ref' ? 'ref' : 'p' + e.who;
-      const ans = e.a === undefined ? '<span></span>' : `<span class="ans ${e.a ? 'y' : 'n'}">${e.a ? 'Yes' : 'No'}</span>`;
-      return `<li class="${cls}"><span class="av">${av}</span><span>${e.html}</span>${ans}</li>`;
+      const av = e.who === 'ref' ? '<span class="av">!</span>' : `<span class="av p${e.who}">${esc(G.players[e.who].name.charAt(0).toUpperCase())}</span>`;
+      const ans = e.a === undefined ? '<span></span>' : `<span class="pill ${e.a ? 'y' : 'n'}">${e.a ? 'Yes' : 'No'}</span>`;
+      return `<li>${av}<span>${e.html}</span>${ans}</li>`;
     }).join('');
   }
 
+  function renderSeg() {
+    $('segCpu').setAttribute('aria-pressed', String(G.mode === 'cpu'));
+    $('segPvp').setAttribute('aria-pressed', String(G.mode === 'pvp'));
+  }
   function renderAll() { renderSeg(); renderBoard(); renderOpp(); renderScore(); renderDock(); renderLog(); }
 
-  // ---------- Jumbotron ----------
-  function setJumbo(asker, text, ans, sub) {
-    $('jAsker').textContent = asker;
-    const t = $('jText'); t.textContent = text; t.classList.remove('caret');
-    $('jStamp').innerHTML = ans == null ? '' : `<span class="stamp ${ans ? 'y' : 'n'}">${ans ? 'YES' : 'NO'}</span>`;
-    $('jSub').textContent = sub || '';
+  // ---------- Live panel ----------
+  function setAsker(who, label) {
+    const av = $('jAv');
+    av.className = 'av' + (typeof who === 'number' ? ' p' + who : '');
+    av.textContent = typeof who === 'number' ? G.players[who].name.charAt(0).toUpperCase() : '·';
+    $('jAsker').textContent = label;
   }
-  async function typeJumbo(asker, text, token, speed) {
-    $('jAsker').textContent = asker; $('jStamp').innerHTML = ''; $('jSub').textContent = '';
+  function setLive(who, label, text, ans, sub, ctx) {
+    setAsker(who, label);
+    const t = $('jText'); t.textContent = text; t.classList.remove('caret');
+    $('jStamp').innerHTML = ans == null ? '' : verdict(ans);
+    $('jSub').textContent = sub || '';
+    $('liveCtx').textContent = ctx || (G ? `Question ${G.qcount}` : 'Tip-off');
+  }
+  const verdict = a => `<span class="verdict ${a ? 'y' : 'n'}">${a ? 'YES' : 'NO'}</span>`;
+  async function typeLive(who, label, text, token, speed) {
+    setAsker(who, label); $('jStamp').innerHTML = ''; $('jSub').textContent = '';
+    $('liveCtx').textContent = `Question ${G.qcount}`;
     const t = $('jText'); t.classList.add('caret'); t.textContent = '';
     if (RM) { t.textContent = text; t.classList.remove('caret'); return; }
     for (let i = 1; i <= text.length; i++) {
@@ -730,7 +702,7 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
     }
     t.classList.remove('caret');
   }
-  const stamp = (a, sub) => { $('jStamp').innerHTML = `<span class="stamp ${a ? 'y' : 'n'}">${a ? 'YES' : 'NO'}</span>`; if (sub != null) $('jSub').textContent = sub; };
+  const stamp = (a, sub) => { $('jStamp').innerHTML = verdict(a); if (sub != null) $('jSub').textContent = sub; };
 
   // ---------- Human actions ----------
   async function humanAsk() {
@@ -741,27 +713,26 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
     G.selected = null; G.phase = 'busy'; G.qcount++;
     me.asked.set(q.id, a);
     renderDock(); renderScore();
-    await typeJumbo(`${me.name} ${verb(me.name, 'ask', 'asks')}`, q.text, token, 14);
+    await typeLive(meIdx, `${me.name} ${verb(me.name, 'ask', 'asks')}`, q.text, token, 12);
     if (token !== G.token) return;
-    await sleep(350); if (token !== G.token) return;
+    await sleep(300); if (token !== G.token) return;
     stamp(a, `${them.name} ${verb(them.name, 'answer', 'answers')}.`);
     G.log.push({ who: meIdx, html: esc(q.text), a });
     G.phase = 'flip';
     renderLog(); renderDock();
     if ($('autoFlip').checked) {
-      const out = PLAYERS.filter(p => !me.flipped.has(p.id) && q.test(p) !== a);
+      const out = PLAYERS.filter(p => !me.out.has(p.id) && q.test(p) !== a);
       for (const p of out) {
         if (token !== G.token) return;
-        me.flipped.add(p.id);
-        const el = $('board').querySelector(`[data-id="${p.id}"]`); if (el) el.classList.add('flipped');
-        $('leftCount').textContent = `${PLAYERS.length - me.flipped.size} still standing`;
-        renderScore();
-        await sleep(55);
+        me.out.add(p.id);
+        const el = $('board').querySelector(`[data-id="${p.id}"]`); if (el) el.classList.add('out');
+        renderLeft(); renderScore();
+        await sleep(45);
       }
-      $('jSub').textContent = out.length ? `Auto-flipped ${out.length}. End your turn when ready.` : 'Nobody to flip. End your turn when ready.';
+      $('jSub').textContent = out.length ? `${out.length} eliminated automatically. End your turn when ready.` : 'Nobody to eliminate. End your turn when ready.';
       renderBoard();
     } else {
-      $('jSub').textContent = 'Flip down everyone that doesn’t fit, then end your turn.';
+      $('jSub').textContent = 'Eliminate everyone who doesn’t fit, then end your turn.';
     }
   }
 
@@ -776,10 +747,8 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
     G.cur = idx; G.phase = 'handoff'; G.selected = null; G.guessing = false; G.guessPick = null;
     const me = G.players[idx], other = G.players[1 - idx];
     $('hoName').textContent = me.name;
-    $('hoText').textContent = first
-      ? `${me.name} goes first. ${other.name}, look away until the board is up.`
-      : `${other.name}, hand it over and look away. ${me.name}, tap when you're ready.`;
-    $('hoGo').textContent = `I'm ${me.name}`;
+    $('hoText').textContent = first ? `${me.name} goes first. ${other.name}, look away until the board is up.` : `${other.name}, hand it over and look away. ${me.name}, continue when you're ready.`;
+    $('hoGo').textContent = `Continue as ${me.name}`;
     $('handoff').hidden = false;
     setTimeout(() => $('hoGo').focus(), 50);
     renderAll();
@@ -787,7 +756,7 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
   function takeover() {
     $('handoff').hidden = true;
     G.phase = 'ask';
-    setJumbo(`${cur().name} has the ball`, 'Pick a question or take a shot', null, `${opp().name} has ${PLAYERS.length - opp().flipped.size} players standing.`);
+    setLive(G.cur, `${cur().name}'s turn`, 'Pick a question or make a guess.', null, `${opp().name} has ${PLAYERS.length - opp().out.size} players standing.`);
     renderAll();
   }
 
@@ -802,11 +771,11 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
     const token = G.token, me = cur(), them = opp(), meIdx = G.cur, id = G.guessPick;
     G.guessing = false; G.guessPick = null; G.phase = 'busy';
     renderBoard(); renderDock();
-    await typeJumbo(`${me.name} ${verb(me.name, 'call', 'calls')} it`, `Is it ${byId[id].name}?`, token, 28);
+    await typeLive(meIdx, `${me.name} ${verb(me.name, 'make', 'makes')} a guess`, `Is it ${byId[id].name}?`, token, 24);
     if (token !== G.token) return;
-    await sleep(700); if (token !== G.token) return;
+    await sleep(650); if (token !== G.token) return;
     const right = id === them.secret;
-    stamp(right, right ? 'Nothing but net.' : `Airball. It was ${byId[them.secret].name}.`);
+    stamp(right, right ? 'Correct.' : `Wrong. It was ${byId[them.secret].name}.`);
     G.log.push({ who: 'ref', html: `${esc(me.name)} guessed <b>${esc(byId[id].name)}</b>`, a: right });
     renderLog();
     finish(right ? meIdx : 1 - meIdx, right, id);
@@ -816,15 +785,14 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
     if (!G || G.phase === 'over' || G.phase === 'handoff') return;
     const v = G.players[viewerIdx()];
     if (G.guessing) {
-      if (v.flipped.has(id)) return;
+      if (v.out.has(id)) return;
       G.guessPick = G.guessPick === id ? null : id;
       renderBoard(); renderDock();
       return;
     }
-    if (v.flipped.has(id)) v.flipped.delete(id); else v.flipped.add(id);
-    $('board').querySelector(`[data-id="${id}"]`).classList.toggle('flipped', v.flipped.has(id));
-    $('leftCount').textContent = `${PLAYERS.length - v.flipped.size} still standing`;
-    renderScore();
+    if (v.out.has(id)) v.out.delete(id); else v.out.add(id);
+    $('board').querySelector(`[data-id="${id}"]`).classList.toggle('out', v.out.has(id));
+    renderLeft(); renderScore();
   }
 
   // ---------- CPU ----------
@@ -843,10 +811,10 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
     const me = G.players[1], human = G.players[0];
     const ob = $('oppBoard');
     const tile = id => ob.querySelector(`[data-id="${id}"]`);
-    const R = PLAYERS.map(p => p.id).filter(id => !me.flipped.has(id));
-    setJumbo('CPU has the ball', 'Scanning the board', null, `${R.length} players still standing on its board.`);
+    const R = PLAYERS.map(p => p.id).filter(id => !me.out.has(id));
+    setLive(1, 'CPU is thinking', 'Reviewing its board', null, `${R.length} players still standing.`, 'CPU turn');
     $('jText').classList.add('caret');
-    await sleep(800); if (token !== G.token) return;
+    await sleep(750); if (token !== G.token) return;
 
     const choice = R.length > 1 ? cpuPick(me, R) : null;
     const gamble = R.length === 2 && G.diff === 'easy' && Math.random() < 0.5;
@@ -854,51 +822,50 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
     if (!choice || gamble) {
       const g = pick(R);
       tile(g).classList.add('target');
-      await typeJumbo('CPU calls it', `Is it ${byId[g].name}?`, token, 30);
+      await typeLive(1, 'CPU makes a guess', `Is it ${byId[g].name}?`, token, 26);
       if (token !== G.token) return;
-      await sleep(800); if (token !== G.token) return;
+      await sleep(750); if (token !== G.token) return;
       const right = g === human.secret;
-      stamp(right, right ? 'The CPU read you like a box score.' : `Missed. You had ${byId[human.secret].name}.`);
+      stamp(right, right ? 'The CPU got it.' : `Wrong. You had ${byId[human.secret].name}.`);
       G.log.push({ who: 'ref', html: `CPU guessed <b>${esc(byId[g].name)}</b>`, a: right });
       renderLog();
       finish(right ? 1 : 0, right, g);
       return;
     }
 
-    // Light up the players that fit the question it is about to ask.
     ob.classList.add('scanning');
     for (const id of R) if (choice.q.test(byId[id])) tile(id).classList.add('hl');
-    $('jText').textContent = 'Picking a question';
-    $('jSub').textContent = `Lit up: the ${choice.yes} that would fit. That splits its board ${choice.yes}–${choice.no}.`;
-    await sleep(1100); if (token !== G.token) return;
+    $('jText').textContent = 'Choosing a question';
+    $('jSub').textContent = `Highlighted on its board: the ${choice.yes} that would fit. Splits ${choice.yes}–${choice.no}.`;
+    await sleep(1050); if (token !== G.token) return;
 
     G.qcount++; renderScore();
-    await typeJumbo('CPU asks', choice.q.text, token, 24);
+    await typeLive(1, 'CPU asks', choice.q.text, token, 20);
     if (token !== G.token) return;
     $('jSub').textContent = `Splits its board ${choice.yes}–${choice.no}.`;
-    await sleep(600); if (token !== G.token) return;
+    await sleep(550); if (token !== G.token) return;
     const a = choice.q.test(byId[human.secret]);
     me.asked.set(choice.q.id, a);
-    stamp(a, `Answered for you from your secret player.`);
+    stamp(a, 'Answered for you from your secret player.');
     G.log.push({ who: 1, html: esc(choice.q.text), a });
     renderLog();
-    await sleep(700); if (token !== G.token) return;
+    await sleep(650); if (token !== G.token) return;
 
     ob.classList.remove('scanning');
     for (const id of R) tile(id).classList.remove('hl');
     const out = R.filter(id => choice.q.test(byId[id]) !== a);
     for (const id of out) {
       if (token !== G.token) return;
-      me.flipped.add(id); tile(id).classList.add('out');
-      $('oppLeft').textContent = PLAYERS.length - me.flipped.size; renderScore();
-      await sleep(90);
+      me.out.add(id); tile(id).classList.add('out');
+      $('oppLeft').textContent = PLAYERS.length - me.out.size; renderScore();
+      await sleep(80);
     }
-    const left = PLAYERS.length - me.flipped.size;
-    $('jSub').textContent = `CPU flipped ${out.length}. ${left === 1 ? 'One player left. It guesses next turn.' : `${left} still standing.`}`;
-    await sleep(900); if (token !== G.token) return;
+    const left = PLAYERS.length - me.out.size;
+    $('jSub').textContent = `CPU eliminated ${out.length}. ${left === 1 ? 'One player left: it guesses next turn.' : `${left} still standing.`}`;
+    await sleep(850); if (token !== G.token) return;
 
     G.cur = 0; G.phase = 'ask';
-    setJumbo('Your ball', 'Pick a question or take a shot', null, `CPU is down to ${left}.`);
+    setLive(0, 'Your turn', 'Pick a question or make a guess.', null, `The CPU is down to ${left}.`);
     renderAll();
   }
 
@@ -916,14 +883,14 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
       $('resTitle').textContent = cpuMode ? (winner === 0 ? 'You win' : 'CPU wins') : `${w.name} wins`;
       $('resTitle').className = (!cpuMode || winner === 0) ? 'win' : '';
       const g = byId[guessedId].name;
-      $('resText').textContent = guessedRight ? `${w.name} named ${g}. Nothing but net.` : `${l.name} guessed ${g}. That was a miss.`;
+      $('resText').textContent = guessedRight ? `${w.name} named ${g} correctly in ${G.qcount} question${G.qcount === 1 ? '' : 's'}.` : `${l.name} guessed ${g}, which was wrong.`;
       $('resLbl0').textContent = cpuMode ? 'Your player' : `${G.players[0].name}'s player`;
       $('resLbl1').textContent = `${G.players[1].name}'s player`;
       $('resCard0').innerHTML = staticCard(byId[G.players[0].secret]);
       $('resCard1').innerHTML = staticCard(byId[G.players[1].secret]);
       $('result').hidden = false;
       $('resAgain').focus();
-    }, RM ? 200 : 1300);
+    }, RM ? 200 : 1200);
   }
 
   // ---------- Pregame ----------
@@ -949,7 +916,7 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
   // ---------- Wiring ----------
   $('board').addEventListener('click', e => { const c = e.target.closest('.card'); if (c) onCardClick(c.dataset.id); });
   $('questions').addEventListener('click', e => {
-    const b = e.target.closest('.chip'); if (!b || b.disabled) return;
+    const b = e.target.closest('.qrow'); if (!b || b.disabled) return;
     G.selected = G.selected === b.dataset.q ? null : b.dataset.q; renderDock();
   });
   $('askBtn').addEventListener('click', () => G.guessing ? lockGuess() : humanAsk());
@@ -957,7 +924,7 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
   $('guessBtn').addEventListener('click', toggleGuess);
   $('resetFlips').addEventListener('click', () => {
     if (!G || G.phase === 'over' || G.phase === 'handoff') return;
-    G.players[viewerIdx()].flipped.clear(); renderBoard(); renderScore();
+    G.players[viewerIdx()].out.clear(); renderBoard(); renderScore();
   });
   $('newGameBtn').addEventListener('click', () => openPregame(G.mode));
   $('segCpu').addEventListener('click', () => openPregame('cpu'));
@@ -981,14 +948,14 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
   $('autoFlip').addEventListener('change', e => store.set('wtb-autoflip', e.target.checked));
 
   (() => {
-    const cols = [['pos','Pos'],['ht','Ht'],['num','#'],['ring','Champ'],['mvp','MVP'],['first','No. 1 pick'],['college','College'],['intl','Born abroad'],['pre2000','Pre-2000'],['s2020','2020s'],['lakers','Laker'],['celtics','Celtic'],['texas','Texas']];
+    const cols = [['pos','Pos'],['ht','Height'],['num','#'],['ring','Champion'],['mvp','MVP'],['first','No. 1 pick'],['college','College'],['intl','Born abroad'],['pre2000','Pre-2000'],['s2020','2020s'],['lakers','Lakers'],['celtics','Celtics'],['texas','Texas team']];
     const raw = new Set(['pos','ht','num']);
     $('scoutTable').innerHTML = `<thead><tr><th>Player</th>${cols.map(c => `<th>${c[1]}</th>`).join('')}</tr></thead><tbody>${
       PLAYERS.map(p => `<tr><td>${esc(p.name)}</td>${cols.map(([k]) => raw.has(k) ? `<td>${esc(p[k])}</td>` : `<td class="${p[k] ? 'y' : 'n'}">${p[k] ? 'Yes' : '–'}</td>`).join('')}</tr>`).join('')
     }</tbody>`;
   })();
 
-  // Boot: a vs-CPU game sits ready behind the pregame sheet.
+  // Boot: a vs-CPU game is ready behind the new-game dialog.
   newGame({ mode: 'cpu', diff: setup.diff, names: setup.names });
   openPregame(setup.mode);
 })();
