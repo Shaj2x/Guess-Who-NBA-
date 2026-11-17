@@ -64,15 +64,16 @@ button, input { font: inherit; color: inherit; }
 .brand p { margin: 3px 0 0; color: var(--muted); font-family: var(--label); letter-spacing: .12em; text-transform: uppercase; font-size: .78rem; }
 .top-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .seg { display: inline-flex; padding: 3px; background: var(--ink-2); border: 1px solid var(--line); border-radius: 999px; }
-.seg button { border: 0; background: transparent; padding: 7px 14px; border-radius: 999px; font-family: var(--label); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: .85rem; color: var(--muted); cursor: pointer; }
+.seg button { min-height: 38px; border: 0; background: transparent; padding: 7px 14px; border-radius: 999px; font-family: var(--label); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: .85rem; color: var(--muted); cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--chalk); color: var(--ink); }
 .btn {
   border-radius: 10px; border: 1px solid var(--line-2); background: var(--ink-3);
   padding: 9px 14px; font-family: var(--label); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: .9rem;
   cursor: pointer; transition: background .15s, border-color .15s, transform .1s;
 }
-.btn:hover:not(:disabled) { border-color: var(--muted); }
-.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn { min-height: 44px; }
+.btn:hover:not(:disabled) { border-color: var(--muted); transform: translateY(-1px); }
+.btn:active:not(:disabled) { transform: translateY(1px) scale(.98); }
 .btn:disabled { opacity: .38; cursor: not-allowed; }
 .btn.primary { background: linear-gradient(180deg, var(--ball-hi), var(--ball)); border-color: var(--ball); color: #1d0c02; box-shadow: 0 6px 16px rgba(240,122,46,.28); }
 .btn.primary:hover:not(:disabled) { border-color: var(--ball-hi); }
@@ -177,6 +178,8 @@ button, input { font: inherit; color: inherit; }
 .card { appearance: none; border: 0; padding: 0; background: none; cursor: pointer; display: block; width: 100%; aspect-ratio: 3 / 4.15; max-width: 100%; perspective: 900px; }
 .card .inner { position: relative; width: 100%; height: 100%; transition: transform .5s cubic-bezier(.3,1.25,.5,1); transform-style: preserve-3d; }
 .card.flipped .inner { transform: rotateY(180deg); }
+.board.deal .card { animation: dealIn .5s cubic-bezier(.2,1.1,.4,1) backwards; animation-delay: calc(var(--i) * 28ms); }
+@keyframes dealIn { from { opacity: 0; transform: translateY(-14px) scale(.92); } }
 .face { position: absolute; inset: 0; border-radius: 12px; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; display: flex; flex-direction: column; }
 .front {
   color: #17110a; border: 2px solid #fffaf2;
@@ -185,7 +188,7 @@ button, input { font: inherit; color: inherit; }
   transition: transform .15s, box-shadow .15s;
 }
 .front::before { content: ""; position: absolute; inset: 0; background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.45) 45%, transparent 60%); transform: translateX(-120%); transition: transform .6s; pointer-events: none; }
-.card:hover:not(.flipped) .front { transform: translateY(-3px); box-shadow: 0 6px 0 rgba(60,30,5,.3), 0 16px 22px rgba(40,20,0,.28); }
+.card:hover:not(.flipped) .front { transform: translateY(-2px); box-shadow: 0 6px 0 rgba(60,30,5,.3), 0 16px 22px rgba(40,20,0,.28); }
 .card:hover:not(.flipped) .front::before { transform: translateX(120%); }
 .front .jersey { flex: 1; display: grid; place-items: center; padding: 18px 8px 0; min-height: 0; }
 .front .jersey svg { width: 80%; height: auto; max-height: 100%; display: block; filter: drop-shadow(0 4px 4px rgba(0,0,0,.18)); }
@@ -233,6 +236,8 @@ button, input { font: inherit; color: inherit; }
 .qs { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { border: 1px solid var(--line-2); background: var(--ink-3); border-radius: 999px; padding: 6px 12px; cursor: pointer; font-family: var(--label); font-weight: 600; font-size: .9rem; letter-spacing: .02em; transition: background .15s, border-color .15s, transform .1s; }
 .chip:hover:not(:disabled) { border-color: var(--ball); transform: translateY(-1px); }
+.chip:active:not(:disabled) { transform: translateY(1px) scale(.97); }
+@media (pointer: coarse), (max-width: 760px) { .chip { min-height: 44px; padding-inline: 14px; } .seg button { min-height: 44px; } }
 .chip.sel { background: var(--ball); border-color: var(--ball); color: #1d0c02; }
 .chip:disabled { opacity: .3; cursor: not-allowed; }
 .chip.asked-yes:disabled, .chip.asked-no:disabled { opacity: .6; }
@@ -573,6 +578,7 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
 
   // ---------- State ----------
   let G = null;
+  let dealT;
   const setup = { mode: store.get('wtb-mode', 'cpu'), diff: store.get('wtb-diff', 'normal'), names: store.get('wtb-names', ['', '']) };
   const wins = store.get('wtb-wins', {});
 
@@ -599,6 +605,8 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
       cur: 0, phase: 'ask', selected: null, guessing: false, guessPick: null, qcount: 0, log: [],
     };
     $('result').hidden = true; $('handoff').hidden = true;
+    const bd = $('board'); bd.classList.remove('deal'); void bd.offsetWidth; bd.classList.add('deal');
+    clearTimeout(dealT); dealT = setTimeout(() => bd.classList.remove('deal'), 1400);
     $('oppBoard').classList.remove('scanning');
     $('oppBoard').querySelectorAll('.tile').forEach(t => t.classList.remove('hl', 'target'));
     if (isCpu) setJumbo('Tip-off', 'Your ball. Pick a question.', null, 'You and the CPU each have a secret player.');
@@ -615,7 +623,7 @@ details.scout summary { cursor: pointer; padding: 14px 16px; font-family: var(--
 
   function renderBoard() {
     const b = $('board');
-    if (!b.children.length) b.innerHTML = PLAYERS.map(p => `<button class="card" data-id="${p.id}" style="--c:${p.c1}">${cardInner(p)}</button>`).join('');
+    if (!b.children.length) b.innerHTML = PLAYERS.map((p, i) => `<button class="card" data-id="${p.id}" style="--c:${p.c1};--i:${i}">${cardInner(p)}</button>`).join('');
     const v = G.players[viewerIdx()];
     b.classList.toggle('guessing', G.guessing);
     for (const el of b.children) {
