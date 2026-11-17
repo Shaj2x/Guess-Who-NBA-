@@ -235,6 +235,9 @@ p, li { text-wrap: pretty; }
 /* Headshot: transparent NBA.com cut-out standing on the team colour, number tucked top-left */
 .plate .headshot { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 92%; object-fit: cover; object-position: 50% 100%; opacity: 0; transition: opacity var(--dur) var(--ease); }
 .plate .headshot.ready { opacity: 1; }
+/* A regular photo (not a cut-out) fills the whole plate */
+.plate .headshot.full { height: 100%; object-position: 50% 20%; }
+.plate.has-photo:has(.full) .big { text-shadow: 0 1px 2px rgba(0,0,0,.5); color: #fff; }
 .plate.has-photo .big { left: var(--s-3); top: var(--s-2); bottom: auto; font-size: 22cqw; line-height: 1; opacity: .9; }
 /* optical: pull the number left to offset its side bearing */
 .plate .big { position: absolute; left: calc(8% - .04em); bottom: 6%; font-family: var(--font-display); font-weight: 700; font-stretch: 62%; font-size: 52cqw; line-height: .8; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
@@ -272,6 +275,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 .tbl td { color: var(--ink-2); }
 .tbl td.y { color: var(--yes); font-weight: 600; }
 .footnote { margin: 0; color: var(--ink-2); font-size: var(--text-xs); text-align: center; padding-bottom: 104px; }
+.footnote a { color: inherit; }
 .footnote span { background: var(--surface); padding: var(--s-1) var(--s-3); border-radius: var(--r-sm); }
 
 /* ---------- Floating control bar ---------- */
@@ -433,7 +437,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
       <div class="tbl"><table id="scoutTable"></table></div>
     </details>
   </div>
-  <p class="footnote"><span>Player facts are as of the 2025&ndash;26 season. Fan-made game, not affiliated with the NBA.</span></p>
+  <p class="footnote"><span>Player facts are as of the 2025&ndash;26 season. Headshots: NBA.com. Patrick Ewing photo: Mike, derivative work by Lpdrew, <a href="https://commons.wikimedia.org/wiki/File:Patrick_Ewing_Magic_cropped.jpg">CC BY-SA 2.0</a> via Wikimedia Commons. Fan-made game, not affiliated with the NBA.</span></p>
 </div>
 
 <div class="qmenu" id="qmenu" hidden role="dialog" aria-label="Choose a question">
@@ -547,11 +551,14 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     ewing: 121, reggie: 397, wade: 2548, curry: 201939, lebron: 2544, durant: 201142,
     giannis: 203507, jokic: 203999, sga: 1628983, tatum: 1628369, robinson: 764, yao: 2397,
   };
+  // NBA.com serves a blank silhouette for Ewing, so his photo comes from Wikimedia Commons
+  // (credited in the footer, as its CC BY-SA 2.0 licence requires).
   const PHOTO_OVERRIDES = {
-    // russell: 'https://upload.wikimedia.org/...',
+    ewing: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Patrick_Ewing_Magic_cropped.jpg/500px-Patrick_Ewing_Magic_cropped.jpg',
   };
+  const HEADSHOT_URL = id => `https://cdn.nba.com/headshots/nba/latest/1040x760/${id}.png`;
   const PHOTOS = Object.fromEntries(Object.entries(NBA_IDS).map(([k, id]) =>
-    [k, PHOTO_OVERRIDES[k] || `https://cdn.nba.com/headshots/nba/latest/1040x760/${id}.png`]));
+    [k, PHOTO_OVERRIDES[k] || HEADSHOT_URL(id)]));
 
   const byId = Object.fromEntries(PLAYERS.map(p => [p.id, p]));
   const POS = { G: 'Guard', F: 'Forward', C: 'Center' };
@@ -598,7 +605,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 
   const cardInner = p => `<div class="inner">
       <div class="face front">
-        <div class="plate${PHOTOS[p.id] ? ' has-photo' : ''}"><span class="big">${p.num}</span>${PHOTOS[p.id] ? `<img class="headshot" src="${esc(PHOTOS[p.id])}" alt="" loading="lazy" decoding="async">` : ''}<span class="pos">${p.pos}</span></div>
+        <div class="plate${PHOTOS[p.id] ? ' has-photo' : ''}"><span class="big">${p.num}</span>${PHOTOS[p.id] ? `<img class="headshot${PHOTO_OVERRIDES[p.id] ? ' full' : ''}" src="${esc(PHOTOS[p.id])}" alt="" loading="lazy" decoding="async">` : ''}<span class="pos">${p.pos}</span></div>
         <div class="cap"><div class="nm">${esc(p.name)}</div><div class="mt">${esc(metaLine(p))}</div></div>
       </div>
       <div class="face back"><span class="s">${esc(p.name)}</span></div>
