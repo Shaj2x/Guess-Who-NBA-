@@ -240,7 +240,7 @@ button, input { font: inherit; color: inherit; }
 @media (max-width: 1260px) and (min-width: 821px) { .opp-grid { grid-template-columns: repeat(6, minmax(0,1fr)); } }
 .tile { aspect-ratio: 1 / 1.1; border-radius: 7px; display: grid; place-items: center; align-content: center; background: var(--c); color: var(--t); border: 1px solid color-mix(in srgb, var(--c) 70%, #000); transition: background .3s, color .3s, border-color .3s, box-shadow .2s, transform .2s, opacity .3s; max-width: 100%; }
 .tile b { font-weight: 800; font-stretch: 75%; font-size: 1.05rem; line-height: 1; }
-.tile span { font-size: .55rem; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; max-width: 100%; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .9; }
+.tile span { font-size: .6rem; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; max-width: 100%; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .9; }
 .tile.out { background: transparent; color: var(--muted); border: 1px dashed var(--line-2); opacity: .55; }
 .opp-grid.scanning .tile:not(.out):not(.hl) { opacity: .3; }
 .tile.hl { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); transform: translateY(-1px); }
@@ -519,7 +519,8 @@ h2.win { color: var(--accent); }
   const lum = hex => { const h = hex.replace('#',''); return 0.299*parseInt(h.substr(0,2),16) + 0.587*parseInt(h.substr(2,2),16) + 0.114*parseInt(h.substr(4,2),16); };
   const textOn = p => (Math.abs(lum(p.c1) - lum(p.c2)) > 60) ? p.c2 : (lum(p.c1) > 150 ? '#111111' : '#ffffff');
   const verb = (name, base, s) => name === 'You' ? base : s;
-  const metaLine = p => `${POS[p.pos]} · ${p.ht} · #${p.num}`;
+  const metaLine = p => `${POS[p.pos]} · ${p.ht}`;
+  const initials = n => n.split(/[\s-]+/).map(w => w[0]).join('').slice(0, 3).toUpperCase();
 
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
@@ -594,7 +595,7 @@ h2.win { color: var(--accent); }
     renderLeft();
     const sp = byId[v.secret];
     $('secret').innerHTML = `<div class="sj" style="--c:${sp.c1}">${jerseySVG(sp)}</div>
-      <div style="min-width:0"><div class="label">${G.mode === 'cpu' ? 'Your' : esc(v.name) + "'s"} secret player</div><div class="nm">${esc(sp.name)}</div><div class="meta">${esc(sp.nick)} · ${esc(metaLine(sp))}</div></div>
+      <div style="min-width:0"><div class="label">${G.mode === 'cpu' ? 'Your' : esc(v.name) + "'s"} secret player</div><div class="nm">${esc(sp.name)}</div><div class="meta">${esc(sp.nick)} · ${esc(metaLine(sp))} · #${sp.num}</div></div>
       <div class="lock">${G.mode === 'cpu' ? 'The CPU is trying to work out who this is.' : 'Keep this hidden from ' + esc(G.players[1 - viewerIdx()].name) + '.'}</div>`;
   }
   function renderLeft() {
@@ -605,7 +606,7 @@ h2.win { color: var(--accent); }
 
   function renderOpp() {
     const ob = $('oppBoard');
-    if (!ob.children.length) ob.innerHTML = PLAYERS.map(p => `<div class="tile" data-id="${p.id}" style="--c:${p.c1};--t:${textOn(p)}" title="${esc(p.name)}"><b>${p.num}</b><span>${esc(surname(p.name))}</span></div>`).join('');
+    if (!ob.children.length) ob.innerHTML = PLAYERS.map(p => `<div class="tile" data-id="${p.id}" style="--c:${p.c1};--t:${textOn(p)}" title="${esc(p.name)}"><b>${p.num}</b><span>${esc(initials(p.name))}</span></div>`).join('');
     const o = G.players[1 - viewerIdx()];
     for (const el of ob.children) el.classList.toggle('out', o.out.has(el.dataset.id));
     $('oppTitle').textContent = `${o.name}'s board`;
