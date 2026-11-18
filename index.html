@@ -17,8 +17,8 @@
    ===================================================================== */
 :root {
   /* Colour: neutral base, one accent, two semantic answers */
-  --bg: #fbf8f1;           /* ivory */
-  --surface: #fffefb;
+  --bg: #ffffff;           /* royal white */
+  --surface: #ffffff;
   --surface-2: #f5efe2;
   --ink: #1b1712;          /* 17:1 on surface */
   --ink-2: #4f463a;        /* 9:1 on surface: secondary text */
@@ -37,7 +37,7 @@
 
   /* Silk background: shadow fold, lit fold, sheen */
   --silk-a: #cdb37a;      /* gold in the folds */
-  --silk-b: #fffdf8;      /* white silk */
+  --silk-b: #ffffff;      /* white silk */
   --silk-hi: #ffe6a3;     /* gold sheen */
 
   /* Type */
@@ -89,6 +89,9 @@ button, input { font: inherit; color: inherit; }
 h1, h2, h3 { text-wrap: balance; }
 p, li { text-wrap: pretty; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+::selection { background: var(--accent-weak); color: var(--ink); }
+html { caret-color: var(--accent-ink); scrollbar-color: color-mix(in srgb, var(--accent) 45%, transparent) transparent; }
+input[type="checkbox"] { accent-color: var(--accent); }
 .num { font-variant-numeric: tabular-nums; }
 .wrap { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; display: grid; gap: var(--s-6); }
 #silk { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; display: block; pointer-events: none;
@@ -163,6 +166,7 @@ p, li { text-wrap: pretty; }
 
 .live { display: grid; gap: var(--s-3); align-content: start; min-width: 0; }
 .asker { display: flex; align-items: center; gap: var(--s-2); font-size: var(--text-sm); color: var(--muted); min-height: 20px; }
+.asker:empty { display: none; }
 .asker b { color: var(--ink); font-weight: 600; }
 .lq { margin: 0; font-family: var(--font-display); font-weight: 600;  font-size: clamp(var(--text-xl), 2.6vw, var(--text-3xl)); line-height: var(--leading-tight); letter-spacing: -.01em; text-wrap: balance; }
 .lq.typing::after { content: ""; display: inline-block; width: 2px; height: .85em; margin-left: 3px; background: var(--accent); vertical-align: -.08em; }
@@ -183,7 +187,7 @@ p, li { text-wrap: pretty; }
 @media (max-width: 560px) { .opp-grid { grid-template-columns: repeat(8, minmax(0,1fr)); } }
 .tile { aspect-ratio: 1 / 1.15; max-width: 100%; border-radius: var(--r-xs); display: grid; place-items: center; background: var(--c); color: var(--t); font-family: var(--font-body); font-weight: 600;  font-size: var(--text-sm); line-height: 1; font-variant-numeric: tabular-nums; transition: background var(--dur) var(--ease), color var(--dur) var(--ease), outline-color var(--dur-fast) var(--ease); outline: 2px solid transparent; outline-offset: 1px; }
 .tile.out { background: var(--surface-2); color: var(--muted); }
-.tile.hl { outline-color: var(--accent); }
+.tile.hl { outline-color: var(--ink); }
 .tile.target { outline-color: var(--no); }
 
 /* ---------- Board ---------- */
@@ -320,7 +324,8 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 .launcher { max-width: 440px; gap: var(--s-5); }
 .launcher .wordmark { justify-content: center; }
 .launcher .wordmark svg { width: 36px; height: 36px; }
-.launcher .wordmark span { font-size: var(--text-2xl); }
+.launcher .wordmark span { font-size: var(--text-2xl); text-wrap: balance; }
+@media (max-width: 420px) { .launcher .wordmark span { font-size: var(--text-xl); } }
 .play { display: grid; gap: var(--s-2); }
 .playbtn { min-height: 60px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font-family: var(--font-display); font-weight: 600; font-size: var(--text-lg); cursor: pointer; transition: background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
 .playbtn:hover { background: color-mix(in srgb, var(--surface-2) 85%, var(--ink) 8%); }
@@ -331,6 +336,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 .opt { display: flex; align-items: center; gap: var(--s-2); }
 .launcher .back { justify-self: center; }
 .opts .seg button { white-space: nowrap; padding: 0 var(--s-3); }
+@media (pointer: coarse), (max-width: 640px) { .chip, .opts .seg button { min-height: 44px; } }
 @media (max-width: 420px) { .opt .label { display: none; } }
 .overlay.start .dialog { padding: var(--s-6); border-radius: 40px; border: 1px solid var(--line); }
 @media (max-width: 560px) { .overlay.start .dialog { padding: var(--s-5); border-radius: var(--r-2xl); } }
@@ -385,7 +391,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
       <span>Who's That Baller?</span>
     </div>
     <div class="top-r">
-      <div class="seg" role="group" aria-label="Game mode">
+      <div class="seg" role="group" aria-label="Game mode" hidden>
         <button id="segCpu" aria-pressed="true">vs CPU</button>
         <button id="segPvp" aria-pressed="false">2 Players</button>
       </div>
@@ -400,7 +406,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
       <div class="turn num"><span id="turnLbl">Your turn</span> &middot; question <span id="qnum">0</span></div>
     </div>
     <div class="live" aria-live="polite">
-      <div class="asker" id="jAsker">Tip-off</div>
+      <div class="asker" id="jAsker"></div>
       <p class="lq" id="jText">Ask a yes/no question about the CPU's player</p>
       <div class="lfoot"><span id="jStamp"></span><span class="lsub" id="jSub">You and the CPU each have a secret player</span></div>
     </div>
@@ -635,7 +641,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     };
     $('result').hidden = true; $('handoff').hidden = true; closeMenu();
     $('oppBoard').querySelectorAll('.tile').forEach(t => t.classList.remove('hl', 'target'));
-    setLive('Tip-off', isCpu ? 'Ask a yes/no question about the CPU\'s player' : `${n0}, ask a yes/no question about ${n1}'s player`, null, isCpu ? 'You and the CPU each have a secret player' : 'Hand the device over between turns');
+    setLive('', isCpu ? 'Ask a yes/no question about the CPU\'s player' : `${n0}, ask a yes/no question about ${n1}'s player`, null, isCpu ? 'You and the CPU each have a secret player' : 'Hand the device over between turns');
     renderAll();
     if (!isCpu) handoff(0, true);
   }
