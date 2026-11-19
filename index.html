@@ -141,6 +141,29 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .side.right { grid-template-columns: auto minmax(0,1fr) 4px; padding: var(--s-2) 0 var(--s-2) var(--s-2); text-align: right; }
 .side .bar { align-self: stretch; background: transparent; transition: background var(--dur) var(--ease); }
 .side.active .bar { background: var(--accent); }
+.side.active { background: linear-gradient(90deg, rgba(255,201,40,.16), transparent 70%); }
+.side.right.active { background: linear-gradient(270deg, rgba(255,201,40,.16), transparent 70%); }
+
+/* Whose turn: a full-width banner, a splash on every change */
+.turnbar { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-4); flex-wrap: wrap; padding: var(--s-2) calc(var(--s-4) + var(--cut)) var(--s-2) var(--s-4); border-radius: var(--r-md) 0 0 var(--r-md); background: var(--accent); color: var(--on-accent); clip-path: polygon(0 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%); transition: background var(--dur) var(--ease), color var(--dur) var(--ease); }
+.turnbar .tb-name { font-family: var(--font-call); font-weight: 900; font-size: var(--text-2xl); line-height: 1; text-transform: uppercase; letter-spacing: .01em; display: inline-flex; align-items: center; gap: var(--s-2); }
+.turnbar .tb-hint { font-size: var(--text-sm); font-weight: 700; }
+.turnbar.theirs { background: var(--panel-2); color: var(--ink); }
+.turnbar.theirs .tb-name { color: var(--accent); }
+.turnbar.lock { background: var(--ground-deep); color: var(--ink-2); box-shadow: inset 0 0 0 2px var(--accent); }
+.turnbar.lock .tb-name { color: var(--accent); }
+.turnbar.over { background: var(--ground-deep); color: var(--ink-2); }
+.turnbar .spinner { color: currentColor; }
+.turnsplash { position: fixed; inset: 0; z-index: 45; display: grid; place-items: center; pointer-events: none; }
+.ts-inner { padding: var(--s-2) calc(var(--s-6) + var(--cut)) var(--s-2) var(--s-6); background: var(--accent); color: var(--on-accent); font-family: var(--font-call); font-weight: 900; font-size: clamp(3rem, 13vw, 7.5rem); line-height: 1; text-transform: uppercase; clip-path: polygon(0 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%); box-shadow: var(--shadow); animation: splash 1200ms var(--ease) forwards; max-width: calc(100% - 2 * var(--s-4)); text-align: center; overflow-wrap: anywhere; }
+.ts-inner.theirs { background: var(--panel-2); color: var(--accent); }
+@keyframes splash { 0% { opacity: 0; transform: translateX(-24px) scale(.96); } 18% { opacity: 1; transform: none; } 78% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateX(16px); } }
+.board.waiting .card .face { filter: saturate(.55) brightness(.75); transition: filter var(--dur) var(--ease); }
+.locks { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-2); justify-items: start; }
+.locks li { display: flex; align-items: center; gap: var(--s-2); font-weight: 700; color: var(--ink); }
+.locks li .icon { color: var(--yes); stroke-width: 3; }
+.locks li span { color: var(--ink-2); font-weight: 500; }
+@media (max-width: 860px) { .turnbar .tb-name { font-size: var(--text-xl); } .turnbar .tb-hint { font-size: var(--text-xs); } }
 .side .nm { font-family: var(--font-call); font-weight: 800; font-size: var(--text-xl); line-height: 1; text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .side:not(.active) .nm { color: var(--ink-2); }
 .side .w { font-size: var(--text-xs); color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -435,6 +458,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 
   <div class="broadcast" id="broadcast">
     <section class="stage" id="stage" aria-label="Scoreboard and live call">
+      <div class="turnbar" id="turnBar" role="status" aria-live="polite"><span class="tb-name" id="tbName">Your turn</span><span class="tb-hint" id="tbHint"></span></div>
       <div class="bug">
         <div class="side" id="side0"><span class="bar"></span><div style="min-width:0"><div class="nm" id="name0">You</div><div class="w" id="wins0">0 wins</div></div><div class="box"><span class="n" id="count0">24</span><span class="u">left</span></div></div>
         <div class="clock"><span class="q num"><span id="qpre">Q</span><span id="qnum">0</span></span><span class="turn" id="turnLbl">Your turn</span></div>
@@ -567,6 +591,17 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     <p class="lq" id="ansQ"></p>
     <div class="row" id="ansBtns"><button class="btn primary" id="ansYes">Yes</button><button class="btn" id="ansNo">No</button></div>
     <button class="btn primary" id="ansBack" hidden>Hand it back</button>
+  </div>
+</div>
+
+<div class="turnsplash" id="turnSplash" hidden aria-hidden="true"><span class="ts-inner" id="tsInner">Your turn</span></div>
+
+<div class="overlay" id="tipoff" hidden>
+  <div class="dialog result" role="dialog" aria-modal="true" aria-labelledby="tipTitle">
+    <h2 id="tipTitle">Both players locked in</h2>
+    <ul class="locks" id="tipLocks"></ul>
+    <p id="tipText"></p>
+    <div class="row"><button class="btn primary" id="tipGo">Tip off</button></div>
   </div>
 </div>
 
@@ -956,10 +991,26 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     // Sharing one device: both players pick before anyone asks, then the first turn goes to player 1.
     const other = opp();
     if (!other.cpu && !other.remote && !other.secret) { handoff(1 - G.cur); return; }
-    if (G.cur !== 0 && G.qcount === 0) { handoff(0); return; }
-    G.phase = isTalk() ? 'flip' : 'ask';
-    startTurnLive();
-    renderAll();
+    showTipoff();
+  }
+
+  // Everyone is locked in: show it, then start the first turn.
+  function showTipoff() {
+    G.phase = 'tipoff'; renderAll();
+    const first = G.players[0];
+    const row = p => `<li>${icon('check')}${esc(p.name)} <span>${p.remote ? 'locks in on their own phone' : 'locked in'}</span></li>`;
+    $('tipLocks').innerHTML = G.players.map(row).join('');
+    $('tipTitle').textContent = G.players[1].remote ? 'You\u2019re locked in' : 'Both players locked in';
+    $('tipText').textContent = G.players[1].remote
+      ? `Tip off once ${G.players[1].name === 'Opponent' ? 'your opponent has' : G.players[1].name + ' has'} locked in on their phone.`
+      : `${first.name === 'You' ? 'You go' : first.name + ' goes'} first. Secret players stay face down until someone guesses.`;
+    $('tipoff').hidden = false; setTimeout(() => $('tipGo').focus(), 50);
+  }
+  function tipOff() {
+    $('tipoff').hidden = true;
+    if (G.mode === 'pvp' || G.mode === 'talk1') { handoff(0); return; }
+    G.cur = 0; G.phase = isTalk() ? 'flip' : 'ask';
+    startTurnLive(); renderAll();
   }
   let peekT;
   function setPeek(on) {
@@ -1011,6 +1062,37 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     $('oppLeft').textContent = PLAYERS.length - o.out.size;
   }
 
+  let lastTurn = '';
+  function turnState() {
+    const c = cur();
+    if (G.phase === 'over') return { name: 'Final', hint: 'Start a new game from the top', cls: 'over' };
+    if (G.phase === 'pick' || G.phase === 'tipoff') {
+      const status = G.players.map(p => p.cpu ? `${p.name} \u2713 locked in` : p.remote ? `${p.name} locks in on their phone` : p.secret ? `${p.name} \u2713 locked in` : `${p.name} picking\u2026`).join(' \u00b7 ');
+      return { name: 'Lock in', hint: status, cls: 'lock' };
+    }
+    if (G.phase === 'handoff') return { name: `${c.name} next`, hint: 'Pass the device', cls: 'lock' };
+    if (G.phase === 'their') return { name: 'Their turn', hint: 'Answer out loud, then tap Their turn is done', cls: 'theirs', key: 'their' };
+    if (c.cpu) return { name: 'CPU\u2019s turn', hint: 'Watch its board and question', cls: 'theirs', key: 'cpu', spin: true };
+    const nm = c.name === 'You' ? 'Your turn' : `${c.name}\u2019s turn`;
+    const hint = G.guessing ? 'Pick your guess. A wrong guess loses.' : G.phase === 'flip' ? (isTalk() ? 'Ask out loud, flip, then End turn' : 'Flip down who doesn\u2019t fit, then End turn') : 'Ask a question or guess';
+    return { name: nm, hint, cls: '', key: 'p' + G.cur };
+  }
+  function renderTurn() {
+    const t = turnState();
+    $('turnBar').className = 'turnbar' + (t.cls ? ' ' + t.cls : '');
+    $('tbName').innerHTML = (t.spin ? spinner : '') + esc(t.name);
+    $('tbHint').textContent = t.hint;
+    $('board').classList.toggle('waiting', t.key === 'cpu' || t.key === 'their');
+    // Splash the name each time the turn changes hands.
+    if (t.key && t.key !== lastTurn) {
+      lastTurn = t.key;
+      const s = $('tsInner'); s.textContent = t.name; s.className = 'ts-inner' + (t.cls === 'theirs' ? ' theirs' : '');
+      $('turnSplash').hidden = false; void s.offsetWidth; s.style.animation = 'none'; void s.offsetWidth; s.style.animation = '';
+      clearTimeout(renderTurn.t); renderTurn.t = setTimeout(() => { $('turnSplash').hidden = true; }, RM ? 900 : 1250);
+    }
+    if (!t.key) lastTurn = '';
+  }
+
   function renderScore() {
     G.players.forEach((p, i) => {
       $('name' + i).textContent = p.name;
@@ -1024,6 +1106,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     const c = cur();
     $('turnLbl').textContent = G.phase === 'over' ? 'Final' : G.phase === 'their' ? 'Their turn' : (c.name === 'You' ? 'Your turn' : `${c.name}'s turn`);
     $('autoFlipWrap').hidden = isTalk();
+    renderTurn();
   }
 
   function renderDock() {
@@ -1280,7 +1363,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     if (G.mode === 'talk2' && G.phase === 'their') { theyGuessed(); return; }
     if (cur().cpu || !(G.phase === 'ask' || G.phase === 'flip')) return;
     G.guessing = !G.guessing; G.guessPick = null; closeMenu();
-    renderBoard(); renderDock();
+    renderBoard(); renderDock(); renderTurn();
   }
 
   async function lockGuess() {
@@ -1307,7 +1390,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   }
 
   function onCardClick(id) {
-    if (!G || G.phase === 'over' || G.phase === 'handoff') return;
+    if (!G || G.phase === 'over' || G.phase === 'handoff' || G.phase === 'tipoff') return;
     if (G.phase === 'pick') { G.pickId = G.pickId === id ? null : id; renderBoard(); renderDock(); return; }
     const v = G.players[viewerIdx()];
     if (G.guessing) {
@@ -1422,7 +1505,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 
   // ---------- Save and resume (survives refresh or the phone closing the tab) ----------
   function saveGame() {
-    if (!G || !['ask', 'flip', 'handoff', 'their', 'pick'].includes(G.phase)) return;
+    if (!G || !['ask', 'flip', 'handoff', 'their', 'pick', 'tipoff'].includes(G.phase)) return;
     store.set('wtb-save', {
       v: 1, mode: G.mode, diff: G.diff, cur: G.cur, phase: G.phase, qcount: G.qcount, log: G.log,
       players: G.players.map(p => ({ name: p.name, secret: p.secret, out: [...p.out], asked: [...p.asked], cpu: p.cpu, remote: !!p.remote })),
@@ -1443,6 +1526,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     $('pregame').hidden = true; $('app').hidden = false; $('dock').hidden = false;
     if (G.phase === 'handoff') { handoff(G.cur); return; }
     if (G.phase === 'pick') { pickPrompt(); renderAll(); return; }
+    if (G.phase === 'tipoff') { showTipoff(); return; }
     const me = cur();
     if (G.phase === 'their') setLive('Their turn', 'Answer their question out loud', null, 'Game restored');
     else if (isTalk()) setLive(`${esc(me.name)} ${verb(me.name, 'are', 'is')} up`, 'Ask your question out loud', null, 'Game restored. Flip down who doesn\u2019t fit, then end your turn.');
@@ -1543,6 +1627,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   $('pgCancel').addEventListener('click', () => { $('pregame').hidden = true; });
   ['p1Name', 'p2Name'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { setup.mode = 'pvp'; startFromPregame(); } }));
   $('hoGo').addEventListener('click', takeover);
+  $('tipGo').addEventListener('click', tipOff);
   $('resAgain').addEventListener('click', () => newGame({ mode: G.mode, diff: G.diff, names: setup.names }));
   $('resChange').addEventListener('click', () => openPregame(G.mode));
   document.addEventListener('keydown', e => {
