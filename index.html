@@ -506,7 +506,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
       <div class="tbl"><table id="scoutTable"></table></div>
     </details>
   </div>
-  <p class="footnote">Player facts are as of the 2025&ndash;26 season. Headshots: NBA.com. Patrick Ewing photo: Mike, derivative work by Lpdrew, <a href="https://commons.wikimedia.org/wiki/File:Patrick_Ewing_Magic_cropped.jpg">CC BY-SA 2.0</a> via Wikimedia Commons. Fan-made game, not affiliated with the NBA.</p>
+  <p class="footnote">Player facts are as of the 2025&ndash;26 season. Headshots: NBA.com. Fan-made game, not affiliated with the NBA.</p>
 </div>
 
 <div class="qmenu" id="qmenu" hidden role="dialog" aria-label="Choose a question">
@@ -643,7 +643,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     { id:'nash',     name:'Steve Nash',              nick:'Two-Time',           num:13, pos:'G', ht:"6'3\"",  in:75, ring:0, mvp:1, first:0, college:1, intl:1, pre2000:1, s2020:0, lakers:1, celtics:0, texas:1, c1:'#e56020', c2:'#1d1160' },
     { id:'garnett',  name:'Kevin Garnett',           nick:'The Big Ticket',     num:21, pos:'F', ht:"6'11\"", in:83, ring:1, mvp:1, first:0, college:0, intl:0, pre2000:1, s2020:0, lakers:0, celtics:1, texas:0, c1:'#0c2340', c2:'#78be20' },
     { id:'russell',  name:'Bill Russell',            nick:'Mr. Eleven Rings',   num:6,  pos:'C', ht:"6'10\"", in:82, ring:1, mvp:1, first:0, college:1, intl:0, pre2000:1, s2020:0, lakers:0, celtics:1, texas:0, c1:'#1e6b3f', c2:'#ffffff' },
-    { id:'ewing',    name:'Patrick Ewing',           nick:'The Hoya Destroya',  num:33, pos:'C', ht:"7'0\"",  in:84, ring:0, mvp:0, first:1, college:1, intl:1, pre2000:1, s2020:0, lakers:0, celtics:0, texas:0, c1:'#006bb6', c2:'#ffffff' },
+    { id:'barkley',  name:'Charles Barkley',         nick:'Sir Charles',        num:34, pos:'F', ht:"6'6\"",  in:78, ring:0, mvp:1, first:0, college:1, intl:0, pre2000:1, s2020:0, lakers:0, celtics:0, texas:1, c1:'#ed174c', c2:'#ffffff' },
     { id:'reggie',   name:'Reggie Miller',           nick:'Knick Killer',       num:31, pos:'G', ht:"6'7\"",  in:79, ring:0, mvp:0, first:0, college:1, intl:0, pre2000:1, s2020:0, lakers:0, celtics:0, texas:0, c1:'#002d62', c2:'#fdbb30' },
     { id:'wade',     name:'Dwyane Wade',             nick:'Flash',              num:3,  pos:'G', ht:"6'4\"",  in:76, ring:1, mvp:0, first:0, college:1, intl:0, pre2000:0, s2020:0, lakers:0, celtics:0, texas:0, c1:'#98002e', c2:'#ffffff' },
     { id:'curry',    name:'Stephen Curry',           nick:'Chef Curry',         num:30, pos:'G', ht:"6'2\"",  in:74, ring:1, mvp:1, first:0, college:1, intl:0, pre2000:0, s2020:1, lakers:0, celtics:0, texas:0, c1:'#1d428a', c2:'#ffc72c' },
@@ -667,14 +667,11 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   const NBA_IDS = {
     jordan: 893, magic: 77142, bird: 1449, kareem: 76003, shaq: 406, kobe: 977,
     hakeem: 165, dirk: 1717, iverson: 947, nash: 959, garnett: 708, russell: 78049,
-    ewing: 121, reggie: 397, wade: 2548, curry: 201939, lebron: 2544, durant: 201142,
+    barkley: 787, reggie: 397, wade: 2548, curry: 201939, lebron: 2544, durant: 201142,
     giannis: 203507, jokic: 203999, sga: 1628983, tatum: 1628369, robinson: 764, yao: 2397,
   };
-  // NBA.com serves a blank silhouette for Ewing, so his photo comes from Wikimedia Commons
-  // (credited in the footer, as its CC BY-SA 2.0 licence requires).
-  const PHOTO_OVERRIDES = {
-    ewing: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Patrick_Ewing_Magic_cropped.jpg/500px-Patrick_Ewing_Magic_cropped.jpg',
-  };
+  // Players NBA.com has no headshot for can point at another licensed image here (credit it in the footer).
+  const PHOTO_OVERRIDES = {};
   const HEADSHOT_URL = id => `https://cdn.nba.com/headshots/nba/latest/1040x760/${id}.png`;
   const PHOTOS = Object.fromEntries(Object.entries(NBA_IDS).map(([k, id]) =>
     [k, PHOTO_OVERRIDES[k] || HEADSHOT_URL(id)]));
@@ -719,7 +716,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     nash:     { teams: ['suns', 'mavericks', 'lakers'], pick: 15, debut: 1996, last: 2013, born: 'south africa', also: ['canada'] },
     garnett:  { teams: ['timberwolves', 'celtics', 'nets'], pick: 5, debut: 1995, last: 2015, born: 'usa', hs: true },
     russell:  { teams: ['celtics'], pick: 2, debut: 1956, last: 1968, born: 'usa' },
-    ewing:    { teams: ['knicks', 'supersonics', 'magic'], pick: 1, debut: 1985, last: 2001, born: 'jamaica' },
+    barkley:  { teams: ['76ers', 'suns', 'rockets'], pick: 5, debut: 1984, last: 1999, born: 'usa' },
     reggie:   { teams: ['pacers'], pick: 11, debut: 1987, last: 2004, born: 'usa' },
     wade:     { teams: ['heat', 'bulls', 'cavaliers'], pick: 5, debut: 2003, last: 2018, born: 'usa' },
     curry:    { teams: ['warriors'], pick: 7, debut: 2009, last: 2025, born: 'usa', active: true },
@@ -776,7 +773,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     if (t.trim().length < 3) return null;
 
     // Naming a player is a guess, not a question.
-    const ALIASES = { shaq: 'shaq', kd: 'durant', mj: 'jordan', steph: 'curry', bron: 'lebron', 'king james': 'lebron', 'the joker': 'jokic', 'greek freak': 'giannis', 'a.i.': 'iverson', 'the answer': 'iverson', 'black mamba': 'kobe', 'big ticket': 'garnett', 'the admiral': 'robinson', 'the dream': 'hakeem', 'his airness': 'jordan', 'larry legend': 'bird', 'skyhook': 'kareem', 'chef curry': 'curry', 'slim reaper': 'durant', 'sga': 'sga' };
+    const ALIASES = { shaq: 'shaq', kd: 'durant', mj: 'jordan', steph: 'curry', bron: 'lebron', 'king james': 'lebron', 'the joker': 'jokic', 'greek freak': 'giannis', 'a.i.': 'iverson', 'the answer': 'iverson', 'black mamba': 'kobe', 'big ticket': 'garnett', 'the admiral': 'robinson', 'the dream': 'hakeem', 'sir charles': 'barkley', chuck: 'barkley', 'his airness': 'jordan', 'larry legend': 'bird', 'skyhook': 'kareem', 'chef curry': 'curry', 'slim reaper': 'durant', 'sga': 'sga' };
     const aliasHit = Object.keys(ALIASES).find(a => has(t, [a]));
     const aboutLetters = /\b(name|letter|initial)\b/.test(t);
     const named = aliasHit ? byId[ALIASES[aliasHit]] : aboutLetters ? null : PLAYERS.find(p => p.name.toLowerCase().split(/[\s-]+/).some(part => part.length > 2 && has(t, [part])));

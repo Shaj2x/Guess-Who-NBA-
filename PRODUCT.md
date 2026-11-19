@@ -35,7 +35,7 @@ The CPU plays in the open: it lights up which players its question would keep, t
 ## Capabilities and Constraints
 
 - Roster of 24 players with facts as of the 2025–26 season, defined in `index.html`.
-- Headshots load from NBA.com's headshot server by NBA player ID (IDs checked against nba_api's offline player list). Patrick Ewing uses a Wikimedia Commons photo (CC BY-SA 2.0, credit required). Images fall back to the jersey number when they fail to load.
+- Headshots load from NBA.com's headshot server by NBA player ID (IDs checked against nba_api's offline player list). Images fall back to the jersey number when they fail to load.
 - Win counts and settings persist in localStorage only.
 - Fan-made; not affiliated with the NBA. No NBA or team logos.
 
@@ -46,7 +46,7 @@ The CPU plays in the open: it lights up which players its question would keep, t
 
 ## Evidence on Hand
 
-- Player facts table in-game (`scoutTable`), headshots via NBA.com and one Wikimedia photo.
+- Player facts table in-game (`scoutTable`), headshots via NBA.com for all 24 players.
 - No testimonials, stats about players of the game, or claims; none may be invented.
 
 ## Product Principles

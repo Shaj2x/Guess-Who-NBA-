@@ -15,4 +15,4 @@ An NBA-themed take on the classic "guess the mystery person" board game. Open `i
 
 Player facts are as of the 2025–26 season; the full fact sheet is in the in-game **Scouting report**.
 
-**Headshots** load from NBA.com's headshot server by NBA player ID (IDs checked against nba_api's offline player list). Patrick Ewing's photo comes from Wikimedia Commons (CC BY-SA 2.0, credited in the footer) because NBA.com has no headshot for him. Any image that fails to load falls back to the jersey number.
+**Headshots** load from NBA.com's headshot server by NBA player ID (IDs checked against nba_api's offline player list). Any image that fails to load falls back to the jersey number.
