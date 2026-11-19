@@ -301,6 +301,11 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 .chip.sel { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .chip:disabled { cursor: default; background: transparent; color: var(--muted); }
 
+/* Talk mode */
+.talk-opts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-2); }
+@media (max-width: 420px) { .talk-opts { grid-template-columns: 1fr; } }
+.broadcast.solo { grid-template-columns: minmax(0,1fr); }
+
 /* Your own question */
 .own { display: grid; gap: var(--s-2); padding-bottom: var(--s-4); border-bottom: 1px solid var(--rule); }
 .own-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: var(--s-2); }
@@ -424,11 +429,11 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     </div>
   </header>
 
-  <div class="broadcast">
+  <div class="broadcast" id="broadcast">
     <section class="stage" id="stage" aria-label="Scoreboard and live call">
       <div class="bug">
         <div class="side" id="side0"><span class="bar"></span><div style="min-width:0"><div class="nm" id="name0">You</div><div class="w" id="wins0">0 wins</div></div><div class="box"><span class="n" id="count0">24</span><span class="u">left</span></div></div>
-        <div class="clock"><span class="q num">Q<span id="qnum">0</span></span><span class="turn" id="turnLbl">Your turn</span></div>
+        <div class="clock"><span class="q num"><span id="qpre">Q</span><span id="qnum">0</span></span><span class="turn" id="turnLbl">Your turn</span></div>
         <div class="side right" id="side1"><div class="box"><span class="n" id="count1">24</span><span class="u">left</span></div><div style="min-width:0"><div class="nm" id="name1">CPU</div><div class="w" id="wins1">0 wins</div></div><span class="bar"></span></div>
       </div>
       <div class="lower" id="lower" aria-live="polite">
@@ -455,7 +460,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
         <div class="sub"><span class="num"><b id="leftCount">24</b> left</span><span class="mine" id="secret"></span></div>
       </div>
       <div class="tools">
-        <label class="toggle" for="autoFlip"><input type="checkbox" id="autoFlip"> Auto-flip after each answer</label>
+        <label class="toggle" for="autoFlip" id="autoFlipWrap"><input type="checkbox" id="autoFlip"> Auto-flip after each answer</label>
         <button class="textbtn" id="resetFlips">Reset board</button>
       </div>
     </div>
@@ -501,6 +506,11 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
       <button class="playbtn primary" id="resumeBtn" hidden>Continue game<span class="sub" id="resumeSub"></span></button>
       <button class="playbtn primary" id="modeCpu">Play vs CPU</button>
       <button class="playbtn" id="modePvp">2 Players</button>
+      <button class="playbtn" id="modeTalk" aria-expanded="false" aria-controls="talkOpts">Talk mode<span class="sub">Ask out loud, the game keeps your board</span></button>
+      <div class="talk-opts" id="talkOpts" hidden>
+        <button class="btn" id="talkOne">One phone, pass it</button>
+        <button class="btn" id="talkTwo">Each on our own phone</button>
+      </div>
     </div>
     <div class="opts">
       <div class="opt">
@@ -530,6 +540,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
       <li>On your turn, <b>ask one yes/no question</b>. The answer comes from their secret player automatically.</li>
       <li><b>Flip down</b> every card the answer rules out (tap a card, or turn on Auto-flip), then end your turn.</li>
       <li>Think you know it? Press <b>Guess</b>, tap the card and lock it in. <b>A wrong guess loses the game.</b></li>
+      <li><b>Talk mode:</b> ask and answer out loud. The game keeps your board and secret player; flip your cards and tap <b>End turn</b> when you're done.</li>
     </ol>
     <div class="row"><button class="btn primary" id="helpClose">Got it</button></div>
   </div>
@@ -552,6 +563,14 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     <p class="lq" id="ansQ"></p>
     <div class="row" id="ansBtns"><button class="btn primary" id="ansYes">Yes</button><button class="btn" id="ansNo">No</button></div>
     <button class="btn primary" id="ansBack" hidden>Hand it back</button>
+  </div>
+</div>
+
+<div class="overlay" id="talkDlg" hidden>
+  <div class="dialog result" role="dialog" aria-modal="true" aria-labelledby="talkTitle">
+    <div><h2 id="talkTitle">Is it them?</h2><p id="talkText"></p></div>
+    <div class="row"><button class="btn primary" id="talkYes">They said yes</button><button class="btn" id="talkNo">They said no</button></div>
+    <button class="textbtn" id="talkCancel" style="justify-self:center">Cancel</button>
   </div>
 </div>
 
@@ -880,31 +899,37 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   const curQ = () => G.selected === 'custom' ? G.custom : qById[G.selected];
   const opp = () => G.players[1 - G.cur];
   // Your board is the human's in CPU mode and the current player's in 2-player mode.
-  const viewerIdx = () => G.mode === 'cpu' ? 0 : G.cur;
+  const isTalk = () => G.mode === 'talk1' || G.mode === 'talk2';
+  // Your board is the human's in CPU mode and on your own phone; the current player's when one device is passed.
+  const viewerIdx = () => (G.mode === 'cpu' || G.mode === 'talk2') ? 0 : G.cur;
+  const poss = n => n === 'You' ? 'Your' : `${n}'s`;
   const winKey = i => `${G.mode}:${G.players[i].name}`;
 
   function newGame(cfg) {
     const token = (G ? G.token : 0) + 1;
     const s0 = pick(PLAYERS).id;
     let s1; do { s1 = pick(PLAYERS).id; } while (s1 === s0);
-    const isCpu = cfg.mode === 'cpu';
-    const n0 = isCpu ? 'You' : ((cfg.names[0] || '').trim() || 'Player 1');
-    let n1 = isCpu ? 'CPU' : ((cfg.names[1] || '').trim() || 'Player 2');
+    const isCpu = cfg.mode === 'cpu', ownPhone = cfg.mode === 'talk2', talk = cfg.mode === 'talk1' || ownPhone;
+    const n0 = isCpu ? 'You' : ownPhone ? ((cfg.names[0] || '').trim() || 'You') : ((cfg.names[0] || '').trim() || 'Player 1');
+    let n1 = isCpu ? 'CPU' : ownPhone ? ((cfg.names[1] || '').trim() || 'Opponent') : ((cfg.names[1] || '').trim() || 'Player 2');
     if (!isCpu && n1 === n0) n1 += ' 2';
+    if (ownPhone) s1 = null; // their secret lives on their phone
     G = {
       token, mode: cfg.mode, diff: cfg.diff,
       players: [
         { name: n0, secret: s0, out: new Set(), asked: new Map(), cpu: false },
         { name: n1, secret: s1, out: new Set(), asked: new Map(), cpu: isCpu },
       ],
-      cur: 0, phase: 'ask', selected: null, custom: null, guessing: false, guessPick: null, qcount: 0, log: [],
+      cur: 0, phase: talk ? 'flip' : 'ask', selected: null, custom: null, guessing: false, guessPick: null, qcount: 0, log: [],
     };
     store.del('wtb-save');
     $('result').hidden = true; $('handoff').hidden = true; closeMenu();
     $('oppBoard').querySelectorAll('.tile').forEach(t => t.classList.remove('hl', 'target'));
-    setLive('', isCpu ? 'Ask a yes/no question about the CPU\'s player' : `${n0}, ask a yes/no question about ${n1}'s player`, null, isCpu ? 'You and the CPU each have a secret player' : 'Hand the device over between turns');
+    if (ownPhone) setLive('Your turn', 'Ask your question out loud', null, 'They answer out loud. Flip down who doesn\u2019t fit, then tap End turn. If they go first, tap End turn now.');
+    else if (talk) setLive('', `${n0}, ask your question out loud`, null, 'Flip down who doesn\u2019t fit, then end your turn');
+    else setLive('', isCpu ? 'Ask a yes/no question about the CPU\'s player' : `${n0}, ask a yes/no question about ${n1}'s player`, null, isCpu ? 'You and the CPU each have a secret player' : 'Hand the device over between turns');
     renderAll();
-    if (!isCpu) handoff(0, true);
+    if (!isCpu && !ownPhone) handoff(0, true);
   }
 
   // ---------- Rendering ----------
@@ -920,7 +945,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
       el.setAttribute('aria-pressed', String(o));
       el.setAttribute('aria-label', `${byId[id].name}${o ? ', flipped down' : ''}`);
     }
-    $('boardTitle').textContent = G.mode === 'cpu' ? 'Your 24 players' : `${v.name}'s 24 players`;
+    $('boardTitle').textContent = `${poss(v.name)} 24 players`;
     renderLeft();
     const sp = byId[v.secret];
     $('secret').setAttribute('style', cardStyle(sp));
@@ -936,6 +961,8 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     const ob = $('oppBoard');
     if (!ob.children.length) ob.innerHTML = PLAYERS.map(p => `<div class="tile" data-id="${p.id}" style="${cardStyle(p)}" title="${esc(p.name)}">${p.num}</div>`).join('');
     const o = G.players[1 - viewerIdx()];
+    const solo = G.mode === 'talk2';
+    $('oppWrap').hidden = solo; $('broadcast').classList.toggle('solo', solo);
     for (const el of ob.children) el.classList.toggle('out', o.out.has(el.dataset.id));
     $('oppTitle').textContent = `${o.name}'s board`;
     $('oppLeft').textContent = PLAYERS.length - o.out.size;
@@ -944,14 +971,16 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   function renderScore() {
     G.players.forEach((p, i) => {
       $('name' + i).textContent = p.name;
-      $('count' + i).textContent = PLAYERS.length - p.out.size;
+      $('count' + i).textContent = p.secret === null ? '?' : PLAYERS.length - p.out.size;
       const w = wins[winKey(i)] || 0;
       $('wins' + i).textContent = `${w} win${w === 1 ? '' : 's'}`;
       $('side' + i).classList.toggle('active', G.phase !== 'over' && G.cur === i);
     });
     $('qnum').textContent = G.qcount;
+    $('qpre').textContent = isTalk() ? 'T' : 'Q';
     const c = cur();
-    $('turnLbl').textContent = G.phase === 'over' ? 'Final' : (c.name === 'You' ? 'Your turn' : `${c.name}'s turn`);
+    $('turnLbl').textContent = G.phase === 'over' ? 'Final' : G.phase === 'their' ? 'Their turn' : (c.name === 'You' ? 'Your turn' : `${c.name}'s turn`);
+    $('autoFlipWrap').hidden = isTalk();
   }
 
   function renderDock() {
@@ -999,6 +1028,17 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     else { askBtn.textContent = 'Ask'; askBtn.className = 'btn primary'; askBtn.disabled = !(canAsk && G.selected); }
     gBtn.disabled = !(humanTurn && (G.phase === 'ask' || G.phase === 'flip'));
     gBtn.textContent = G.guessing ? 'Cancel' : 'Guess';
+    if (isTalk() && !over) {
+      // Talk mode: no question picker; End turn, Guess, and on your own phone their side of the turn too.
+      const live = G.phase === 'flip' || G.phase === 'their';
+      $('qbtn').hidden = true;
+      askBtn.hidden = !G.guessing;
+      endBtn.hidden = G.guessing || !live; endBtn.disabled = !live; endBtn.className = 'btn primary';
+      endBtn.textContent = G.phase === 'their' ? 'Their turn is done' : 'End turn';
+      gBtn.hidden = false; gBtn.disabled = !live;
+      gBtn.textContent = G.phase === 'their' ? 'They guessed' : (G.guessing ? 'Cancel' : 'Guess');
+      $('dockStatus').hidden = true;
+    }
   }
 
   function renderLog() {
@@ -1129,6 +1169,17 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   }
 
   function endTurn() {
+    if (G.mode === 'talk2') {
+      if (G.phase === 'flip') {
+        G.cur = 1; G.phase = 'their'; G.qcount++;
+        setLive('Their turn', 'Answer their question out loud', null, 'Tap \u201cTheir turn is done\u201d once they\u2019ve asked. If they name a player, tap \u201cThey guessed\u201d.');
+      } else if (G.phase === 'their') {
+        G.cur = 0; G.phase = 'flip';
+        setLive('Your turn', 'Ask your question out loud', null, 'Flip down who doesn\u2019t fit, then tap End turn');
+      } else return;
+      G.guessing = false; G.guessPick = null; renderAll(); return;
+    }
+    if (G.mode === 'talk1' && G.phase === 'flip') { G.qcount++; G.guessing = false; G.guessPick = null; handoff(1 - G.cur); return; }
     if (G.phase !== 'flip' || cur().cpu) return;
     G.guessing = false; G.guessPick = null;
     if (G.mode === 'cpu') { G.cur = 1; G.phase = 'busy'; renderAll(); showStage(); cpuTurn(G.token); }
@@ -1147,12 +1198,34 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   }
   function takeover() {
     $('handoff').hidden = true;
-    G.phase = 'ask';
-    setLive(`<b>${esc(cur().name)}</b> is up`, 'Ask a question, or guess if you\'re sure', null, `${opp().name} has ${PLAYERS.length - opp().out.size} players left`);
+    G.phase = isTalk() ? 'flip' : 'ask';
+    if (isTalk()) setLive(`<b>${esc(cur().name)}</b> is up`, `${cur().name}, ask your question out loud`, null, 'Flip down who doesn\u2019t fit, then end your turn');
+    else setLive(`<b>${esc(cur().name)}</b> is up`, 'Ask a question, or guess if you\'re sure', null, `${opp().name} has ${PLAYERS.length - opp().out.size} players left`);
     renderAll();
   }
 
+  // Talk mode on your own phone: their answers come out loud, so you tell the game.
+  function askTalk(title, text, yesLabel, noLabel) {
+    return new Promise(resolve => {
+      $('talkTitle').textContent = title; $('talkText').textContent = text;
+      $('talkYes').textContent = yesLabel; $('talkNo').textContent = noLabel;
+      $('talkDlg').hidden = false; setTimeout(() => $('talkYes').focus(), 50);
+      const done = v => { $('talkYes').onclick = $('talkNo').onclick = $('talkCancel').onclick = null; $('talkDlg').hidden = true; resolve(v); };
+      $('talkYes').onclick = () => done(true); $('talkNo').onclick = () => done(false); $('talkCancel').onclick = () => done(null);
+    });
+  }
+  async function theyGuessed() {
+    const mine = byId[G.players[0].secret];
+    const right = await askTalk('They named a player', `Did they name your player, ${mine.name}? A wrong guess loses.`, `Yes, ${mine.name}`, 'No, wrong player');
+    if (right === null) return;
+    G.log.push({ who: 'ref', html: `${esc(G.players[1].name)} guessed ${right ? `<b>${esc(mine.name)}</b>` : 'wrong'}`, a: right });
+    renderLog();
+    stamp(right, right ? `${G.players[1].name} named ${mine.name}` : `${G.players[1].name} guessed wrong`);
+    finish(right ? 1 : 0, right, right ? mine.id : null);
+  }
+
   function toggleGuess() {
+    if (G.mode === 'talk2' && G.phase === 'their') { theyGuessed(); return; }
     if (cur().cpu || !(G.phase === 'ask' || G.phase === 'flip')) return;
     G.guessing = !G.guessing; G.guessPick = null; closeMenu();
     renderBoard(); renderDock();
@@ -1166,8 +1239,16 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     await typeLive(`<b>${esc(me.name)}</b> ${verb(me.name, 'go', 'goes')} for it`, `Is it ${byId[id].name}?`, token, 26);
     if (token !== G.token) return;
     await sleep(650); if (token !== G.token) return;
-    const right = id === them.secret;
-    stamp(right, right ? 'Nothing but net' : `Off the rim. It was ${byId[them.secret].name}.`);
+    let right;
+    if (them.secret === null) {
+      right = await askTalk(`Ask: is it ${byId[id].name}?`, `Say it out loud. What did ${them.name === 'Opponent' ? 'they' : them.name} answer?`, 'They said yes', 'They said no');
+      if (token !== G.token) return;
+      if (right === null) { G.phase = 'flip'; setLive('Your turn', 'Ask your question out loud', null, 'Guess cancelled'); renderAll(); return; }
+      stamp(right, right ? 'Nothing but net' : 'Off the rim');
+    } else {
+      right = id === them.secret;
+      stamp(right, right ? 'Nothing but net' : `Off the rim. It was ${byId[them.secret].name}.`);
+    }
     G.log.push({ who: 'ref', html: `${esc(me.name)} guessed <b>${esc(byId[id].name)}</b>`, a: right });
     renderLog();
     finish(right ? meIdx : 1 - meIdx, right, id);
@@ -1272,13 +1353,15 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
       if (token !== G.token) return;
       const w = G.players[winner], l = G.players[1 - winner];
       const cpuMode = G.mode === 'cpu';
-      $('resTitle').textContent = cpuMode ? (winner === 0 ? 'You win' : 'CPU wins') : `${w.name} wins`;
-      const g = byId[guessedId].name;
-      $('resText').textContent = guessedRight ? `${w.name} named ${g} in ${G.qcount} question${G.qcount === 1 ? '' : 's'}` : `${l.name} guessed ${g}. Wrong call.`;
-      $('resLbl0').textContent = cpuMode ? 'Your player' : `${G.players[0].name}'s player`;
-      $('resLbl1').textContent = `${G.players[1].name}'s player`;
+      $('resTitle').textContent = cpuMode ? (winner === 0 ? 'You win' : 'CPU wins') : w.name === 'You' ? 'You win' : `${w.name} wins`;
+      const g = guessedId ? byId[guessedId].name : null;
+      const turns = isTalk() ? `${G.qcount} turn${G.qcount === 1 ? '' : 's'}` : `${G.qcount} question${G.qcount === 1 ? '' : 's'}`;
+      $('resText').textContent = guessedRight ? `${w.name} named ${g} in ${turns}` : g ? `${l.name} guessed ${g}. Wrong call.` : `${l.name} guessed wrong.`;
+      $('resLbl0').textContent = `${poss(G.players[0].name)} player`;
+      $('resLbl1').textContent = `${poss(G.players[1].name)} player`;
+      $('resLbl1').parentElement.hidden = G.players[1].secret === null;
       $('resCard0').innerHTML = staticCard(byId[G.players[0].secret]);
-      $('resCard1').innerHTML = staticCard(byId[G.players[1].secret]);
+      $('resCard1').innerHTML = G.players[1].secret ? staticCard(byId[G.players[1].secret]) : '';
       $('result').hidden = false;
       $('resAgain').focus();
     }, RM ? 200 : 1200);
@@ -1286,7 +1369,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 
   // ---------- Save and resume (survives refresh or the phone closing the tab) ----------
   function saveGame() {
-    if (!G || !['ask', 'flip', 'handoff'].includes(G.phase)) return;
+    if (!G || !['ask', 'flip', 'handoff', 'their'].includes(G.phase)) return;
     store.set('wtb-save', {
       v: 1, mode: G.mode, diff: G.diff, cur: G.cur, phase: G.phase, qcount: G.qcount, log: G.log,
       players: G.players.map(p => ({ name: p.name, secret: p.secret, out: [...p.out], asked: [...p.asked], cpu: p.cpu })),
@@ -1295,7 +1378,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   function loadSave() {
     const d = store.get('wtb-save', null);
     if (!d || d.v !== 1 || !Array.isArray(d.players) || d.players.length !== 2) return null;
-    if (!d.players.every(p => byId[p.secret])) return null;
+    if (!d.players.every(p => p.secret === null || byId[p.secret])) return null;
     return d;
   }
   function resumeGame(d) {
@@ -1307,7 +1390,9 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     $('pregame').hidden = true; $('app').hidden = false; $('dock').hidden = false;
     if (G.phase === 'handoff') { handoff(G.cur); return; }
     const me = cur();
-    setLive(`${esc(me.name)} ${verb(me.name, 'are', 'is')} up`, G.phase === 'flip' ? 'Flip down who doesn\u2019t fit, then end your turn' : 'Ask a question, or guess if you\'re sure', null, 'Game restored');
+    if (G.phase === 'their') setLive('Their turn', 'Answer their question out loud', null, 'Game restored');
+    else if (isTalk()) setLive(`${esc(me.name)} ${verb(me.name, 'are', 'is')} up`, 'Ask your question out loud', null, 'Game restored. Flip down who doesn\u2019t fit, then end your turn.');
+    else setLive(`${esc(me.name)} ${verb(me.name, 'are', 'is')} up`, G.phase === 'flip' ? 'Flip down who doesn\u2019t fit, then end your turn' : 'Ask a question, or guess if you\'re sure', null, 'Game restored');
     renderAll();
   }
 
@@ -1324,7 +1409,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     const saved = first ? loadSave() : null;
     $('resumeBtn').hidden = !saved;
     $('modeCpu').classList.toggle('primary', !saved);
-    if (saved) $('resumeSub').textContent = `${saved.mode === 'cpu' ? 'vs CPU' : saved.players.map(p => p.name).join(' vs ')} \u00b7 question ${saved.qcount}`;
+    if (saved) $('resumeSub').textContent = `${saved.mode === 'cpu' ? 'vs CPU' : (saved.mode.startsWith('talk') ? 'Talk \u00b7 ' : '') + saved.players.map(p => p.name).join(' vs ')} \u00b7 ${saved.mode.startsWith('talk') ? 'turn' : 'question'} ${saved.qcount}`;
     $('pregame').hidden = false;
   }
   function startFromPregame() {
@@ -1384,6 +1469,13 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   // One tap starts a game
   $('modeCpu').addEventListener('click', () => { setup.mode = 'cpu'; startFromPregame(); });
   $('modePvp').addEventListener('click', () => { setup.mode = 'pvp'; startFromPregame(); });
+  $('modeTalk').addEventListener('click', () => {
+    const open = $('talkOpts').hidden;
+    $('talkOpts').hidden = !open; $('modeTalk').setAttribute('aria-expanded', String(open));
+    if (open) $('talkOne').focus();
+  });
+  $('talkOne').addEventListener('click', () => { setup.mode = 'talk1'; startFromPregame(); });
+  $('talkTwo').addEventListener('click', () => { setup.mode = 'talk2'; startFromPregame(); });
   document.querySelectorAll('[data-diff]').forEach(b => b.addEventListener('click', () => {
     setup.diff = b.dataset.diff;
     document.querySelectorAll('[data-diff]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
