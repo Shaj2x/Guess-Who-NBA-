@@ -301,6 +301,22 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 .chip.sel { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .chip:disabled { cursor: default; background: transparent; color: var(--muted); }
 
+/* Your own question */
+.own { display: grid; gap: var(--s-2); padding-bottom: var(--s-4); border-bottom: 1px solid var(--rule); }
+.own-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: var(--s-2); }
+#ownQ { min-height: 44px; min-width: 0; padding: 0 var(--s-3); border-radius: var(--r-sm); border: 1.5px solid var(--rule); background: var(--ground-deep); color: var(--ink); font-size: var(--text-base); transition: border-color var(--dur-fast) var(--ease); }
+#ownQ::placeholder { color: var(--muted); }
+#ownQ:focus { outline: none; border-color: var(--accent); }
+#ownQ:disabled { opacity: .6; }
+.own-read { margin: 0; font-size: var(--text-sm); color: var(--muted); min-height: 1.45em; }
+.own-read.ok { color: var(--ink-2); }
+.own-read.ok b { color: var(--accent); }
+.own-read.bad { color: #ff9aa1; }
+.log small { color: var(--muted); font-size: var(--text-xs); }
+.handoff-box .lq { text-align: center; }
+.handoff-box .row { display: flex; gap: var(--s-2); justify-content: center; }
+.handoff-box .row .btn { min-width: 112px; }
+
 /* ---------- Overlays ---------- */
 .overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; overflow-y: auto; padding: max(var(--s-4), env(safe-area-inset-top, 0px)) max(var(--s-4), env(safe-area-inset-right, 0px)) max(var(--s-4), env(safe-area-inset-bottom, 0px)) max(var(--s-4), env(safe-area-inset-left, 0px)); background: var(--scrim); }
 .overlay.opaque, .overlay.start { background: radial-gradient(120% 70% at 50% 0%, #15307a 0%, var(--ground) 55%, var(--ground-deep) 100%); }
@@ -461,7 +477,12 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 </div>
 
 <div class="qmenu" id="qmenu" hidden role="dialog" aria-label="Choose a question">
-  <div class="hd"><b>Questions about their player</b><span class="label num" id="askedCount">0 of 16 asked</span></div>
+  <div class="hd"><b>Questions about their player</b><span class="label num" id="askedCount">0 asked</span></div>
+  <div class="own">
+    <label class="label" for="ownQ">Ask your own question</label>
+    <div class="own-row"><input id="ownQ" type="text" maxlength="90" placeholder="e.g. Did he play for the Bulls?" autocomplete="off" enterkeyhint="done"><button class="btn primary" id="ownUse" disabled>Use</button></div>
+    <p class="own-read" id="ownRead" aria-live="polite">Teams, height, jersey number, birthplace, draft, era, honors or name initials</p>
+  </div>
   <div id="questions" style="display:grid;gap:var(--s-4)"></div>
 </div>
 <div class="dock" id="dock" hidden>
@@ -520,6 +541,17 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     <div class="big" id="hoName">Player 2</div>
     <p id="hoText">Everyone else, look away.</p>
     <button class="btn primary" id="hoGo">I'm ready</button>
+  </div>
+</div>
+
+<div class="overlay opaque" id="answerDlg" hidden>
+  <div class="handoff-box" role="dialog" aria-modal="true" aria-labelledby="ansName">
+    <span class="tag-slab" id="ansTag">Hand the device to</span>
+    <div class="big" id="ansName">Player 2</div>
+    <p id="ansAsker">Player 1 asks</p>
+    <p class="lq" id="ansQ"></p>
+    <div class="row" id="ansBtns"><button class="btn primary" id="ansYes">Yes</button><button class="btn" id="ansNo">No</button></div>
+    <button class="btn primary" id="ansBack" hidden>Hand it back</button>
   </div>
 </div>
 
@@ -612,6 +644,203 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   ];
   const qById = Object.fromEntries(QUESTIONS.map(q => [q.id, q]));
 
+  // ---------- Your own questions ----------
+  // Extra facts the free-text reader can answer from (as of the 2025–26 season).
+  // teams: every franchise played for (regular season). pick: overall draft pick.
+  // debut / last: start year of first and latest season. born: birth country.
+  const FACTS = {
+    jordan:   { teams: ['bulls', 'wizards'], pick: 3, debut: 1984, last: 2002, born: 'usa' },
+    magic:    { teams: ['lakers'], pick: 1, debut: 1979, last: 1995, born: 'usa' },
+    bird:     { teams: ['celtics'], pick: 6, debut: 1979, last: 1991, born: 'usa' },
+    kareem:   { teams: ['bucks', 'lakers'], pick: 1, debut: 1969, last: 1988, born: 'usa' },
+    shaq:     { teams: ['magic', 'lakers', 'heat', 'suns', 'cavaliers', 'celtics'], pick: 1, debut: 1992, last: 2010, born: 'usa' },
+    kobe:     { teams: ['lakers'], pick: 13, debut: 1996, last: 2015, born: 'usa', hs: true },
+    hakeem:   { teams: ['rockets', 'raptors'], pick: 1, debut: 1984, last: 2001, born: 'nigeria' },
+    dirk:     { teams: ['mavericks'], pick: 9, debut: 1998, last: 2018, born: 'germany' },
+    iverson:  { teams: ['76ers', 'nuggets', 'pistons', 'grizzlies'], pick: 1, debut: 1996, last: 2009, born: 'usa' },
+    nash:     { teams: ['suns', 'mavericks', 'lakers'], pick: 15, debut: 1996, last: 2013, born: 'south africa', also: ['canada'] },
+    garnett:  { teams: ['timberwolves', 'celtics', 'nets'], pick: 5, debut: 1995, last: 2015, born: 'usa', hs: true },
+    russell:  { teams: ['celtics'], pick: 2, debut: 1956, last: 1968, born: 'usa' },
+    ewing:    { teams: ['knicks', 'supersonics', 'magic'], pick: 1, debut: 1985, last: 2001, born: 'jamaica' },
+    reggie:   { teams: ['pacers'], pick: 11, debut: 1987, last: 2004, born: 'usa' },
+    wade:     { teams: ['heat', 'bulls', 'cavaliers'], pick: 5, debut: 2003, last: 2018, born: 'usa' },
+    curry:    { teams: ['warriors'], pick: 7, debut: 2009, last: 2025, born: 'usa', active: true },
+    lebron:   { teams: ['cavaliers', 'heat', 'lakers'], pick: 1, debut: 2003, last: 2025, born: 'usa', hs: true, active: true },
+    durant:   { teams: ['supersonics', 'thunder', 'warriors', 'nets', 'suns', 'rockets'], pick: 2, debut: 2007, last: 2025, born: 'usa', active: true },
+    giannis:  { teams: ['bucks'], pick: 15, debut: 2013, last: 2025, born: 'greece', active: true },
+    jokic:    { teams: ['nuggets'], pick: 41, debut: 2015, last: 2025, born: 'serbia', active: true },
+    sga:      { teams: ['clippers', 'thunder'], pick: 11, debut: 2018, last: 2025, born: 'canada', active: true },
+    tatum:    { teams: ['celtics'], pick: 3, debut: 2017, last: 2025, born: 'usa', active: true },
+    robinson: { teams: ['spurs'], pick: 1, debut: 1989, last: 2002, born: 'usa' },
+    yao:      { teams: ['rockets'], pick: 1, debut: 2002, last: 2010, born: 'china' },
+  };
+  const F = p => FACTS[p.id];
+
+  // Franchise -> words people use for it. Teams nobody on the board played for still answer "no".
+  const TEAM_WORDS = {
+    bulls: ['bulls', 'chicago'], wizards: ['wizards', 'bullets', 'washington'], lakers: ['lakers'], celtics: ['celtics', 'boston'],
+    bucks: ['bucks', 'milwaukee'], magic: ['the magic', 'orlando'], heat: ['heat', 'miami'], suns: ['suns', 'phoenix'],
+    cavaliers: ['cavaliers', 'cavs', 'cleveland'], rockets: ['rockets', 'houston'], raptors: ['raptors', 'toronto'],
+    mavericks: ['mavericks', 'mavs', 'dallas'], '76ers': ['76ers', 'sixers', 'philadelphia', 'philly'], nuggets: ['nuggets', 'denver'],
+    pistons: ['pistons', 'detroit'], grizzlies: ['grizzlies', 'memphis'], timberwolves: ['timberwolves', 'wolves', 'minnesota'],
+    nets: ['nets', 'brooklyn', 'new jersey'], knicks: ['knicks', 'new york'], supersonics: ['supersonics', 'sonics', 'seattle'],
+    pacers: ['pacers', 'indiana'], warriors: ['warriors', 'golden state'], thunder: ['thunder', 'okc', 'oklahoma'],
+    clippers: ['clippers'], spurs: ['spurs', 'san antonio'], hawks: ['hawks', 'atlanta'], hornets: ['hornets', 'charlotte'],
+    jazz: ['jazz', 'utah'], kings: ['kings', 'sacramento'], pelicans: ['pelicans', 'new orleans'], blazers: ['blazers', 'portland'],
+  };
+  const TEAM_NAME = { '76ers': '76ers', supersonics: 'SuperSonics', timberwolves: 'Timberwolves', blazers: 'Trail Blazers' };
+  const teamLabel = k => TEAM_NAME[k] || (k.charAt(0).toUpperCase() + k.slice(1));
+  const COUNTRY_WORDS = {
+    usa: ['united states', 'the us', 'the usa', 'america', 'american', 'usa', 'u.s.'], canada: ['canada', 'canadian'], nigeria: ['nigeria', 'nigerian'],
+    germany: ['germany', 'german'], 'south africa': ['south africa', 'south african'], jamaica: ['jamaica', 'jamaican'], greece: ['greece', 'greek'],
+    serbia: ['serbia', 'serbian'], china: ['china', 'chinese'], france: ['france', 'french'], spain: ['spain', 'spanish'], australia: ['australia', 'australian'],
+    slovenia: ['slovenia', 'slovenian'], cameroon: ['cameroon', 'cameroonian'], lithuania: ['lithuania', 'lithuanian'], argentina: ['argentina', 'argentine', 'argentinian'],
+  };
+  const REGIONS = { europe: ['germany', 'greece', 'serbia', 'france', 'spain', 'slovenia', 'lithuania'], african: ['nigeria', 'south africa', 'cameroon'], asia: ['china'] };
+  const has = (t, words) => words.some(w => new RegExp(`(^|[^a-z0-9])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`).test(t));
+  const wordNum = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, twenty: 20, thirty: 30, forty: 40, fifty: 50 };
+
+  // Which way a comparison points, from the words around the number.
+  function cmpOf(t) {
+    if (/\b(at least|or (taller|higher|more|above|over|bigger|greater))\b|\+/.test(t)) return '>=';
+    if (/\b(at most|or (shorter|lower|less|under|below|smaller|fewer))\b/.test(t)) return '<=';
+    if (/\b(taller|over|more than|greater than|higher than|above|bigger than|larger than|after|later than|beyond)\b/.test(t)) return '>';
+    if (/\b(shorter|under|less than|lower than|below|smaller than|fewer than|before|earlier than)\b/.test(t)) return '<';
+    return '=';
+  }
+  const cmp = (op, a, b) => op === '>=' ? a >= b : op === '<=' ? a <= b : op === '>' ? a > b : op === '<' ? a < b : a === b;
+  const opWord = { '>=': 'at least', '<=': 'at most', '>': 'over', '<': 'under', '=': 'exactly' };
+  const fmtIn = n => `${Math.floor(n / 12)}'${n % 12}"`;
+
+  // Reads a typed yes/no question. Returns { id, label, test } or { error } or null.
+  function readQuestion(raw) {
+    let t = ' ' + raw.toLowerCase().replace(/[’`]/g, "'").replace(/[?!.]+/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
+    if (t.trim().length < 3) return null;
+
+    // Naming a player is a guess, not a question.
+    const ALIASES = { shaq: 'shaq', kd: 'durant', mj: 'jordan', steph: 'curry', bron: 'lebron', 'king james': 'lebron', 'the joker': 'jokic', 'greek freak': 'giannis', 'a.i.': 'iverson', 'the answer': 'iverson', 'black mamba': 'kobe', 'big ticket': 'garnett', 'the admiral': 'robinson', 'the dream': 'hakeem', 'his airness': 'jordan', 'larry legend': 'bird', 'skyhook': 'kareem', 'chef curry': 'curry', 'slim reaper': 'durant', 'sga': 'sga' };
+    const aliasHit = Object.keys(ALIASES).find(a => has(t, [a]));
+    const aboutLetters = /\b(name|letter|initial)\b/.test(t);
+    const named = aliasHit ? byId[ALIASES[aliasHit]] : aboutLetters ? null : PLAYERS.find(p => p.name.toLowerCase().split(/[\s-]+/).some(part => part.length > 2 && has(t, [part])));
+    if (named && !has(t, ['the magic', 'orlando']) && !/\b(jersey|number|wear)\b/.test(t)) return { error: `That names a player. Use Guess to call ${named.name}.` };
+
+    if (/\b(two|three|four|five|six)[- ]time\b/.test(t) || /\b(two|three|four|five|six|multiple|several|\d+)\b[^?]*\b(titles|rings|championships|mvps)\b|\b(how many|more than one (title|ring|championship|mvp))\b/.test(t)) return { error: "Counts of titles and MVPs aren't on the fact sheet. Ask whether he has won one." };
+    const neg = /\b(not|never)\b|n't\b/.test(t);
+    const out = (id, label, test, preset) => neg
+      ? { id: 'c:not ' + id, label: 'Not: ' + label.charAt(0).toLowerCase() + label.slice(1), test: p => !test(p) }
+      : { id: preset || 'c:' + id, label, test };
+
+    // Name initials
+    let m = t.match(/\b(first|last|sur)?\s*name\s+(starts?|begins?)\s+with\s+(?:an?\s+|the letter\s+)?([a-z])\b/) || t.match(/\b(first|last)\s+initial\s+(?:is\s+)?([a-z])\b/);
+    if (m) {
+      const which = (m[1] || 'first').startsWith('l') || m[1] === 'sur' ? 'last' : 'first', L = (m[3] || m[2]).toUpperCase();
+      const part = p => { const w = p.name.split(' '); return which === 'first' ? w[0] : w.slice(1).join(' '); };
+      return out(`${which}-${L}`, `${which === 'first' ? 'First' : 'Last'} name starts with ${L}`, p => part(p).toUpperCase().startsWith(L));
+    }
+
+    // Teams
+    if (/\b(one team|single team|same team|one franchise|whole career with)\b/.test(t)) return out('one-team', 'Played for only one team', p => F(p).teams.length === 1);
+    m = t.match(/\b(more than|over|at least)\s+(\d+|one|two|three|four|five)\s+teams?\b/);
+    if (m) { const n = +m[2] || wordNum[m[2]]; const op = m[1] === 'at least' ? '>=' : '>'; return out(`teams${op}${n}`, `Played for ${opWord[op]} ${n} team${n === 1 ? '' : 's'}`, p => cmp(op, F(p).teams.length, n)); }
+    if (/\b(multiple|several|many|different|more than one) (teams|franchises)\b/.test(t)) return out('multi-team', 'Played for more than one team', p => F(p).teams.length > 1);
+    const teamKeys = Object.keys(TEAM_WORDS).filter(k => has(t, TEAM_WORDS[k]));
+    if (teamKeys.length === 1) {
+      const k = teamKeys[0], preset = { lakers: 'lakers', celtics: 'celtics' }[k];
+      return out('team-' + k, `Played for the ${teamLabel(k)}`, p => F(p).teams.includes(k), preset);
+    }
+    if (has(t, ['texas'])) return out('texas', 'Played for the Rockets, Mavericks or Spurs', p => !!p.texas, 'texas');
+
+    // Birthplace
+    if (/\b(international|foreign|overseas|outside the (us|usa|united states|states)|abroad|non-american)\b/.test(t)) return out('intl', 'Born outside the United States', p => !!p.intl, 'intl');
+    for (const [region, list] of Object.entries(REGIONS)) {
+      if (has(t, region === 'european' || region === 'europe' ? ['europe', 'european'] : region === 'african' ? ['africa', 'african'] : ['asia', 'asian'])) {
+        const name = { europe: 'Europe', african: 'Africa', asia: 'Asia' }[region];
+        return out('born-' + region, `Born in ${name}`, p => list.includes(F(p).born));
+      }
+    }
+    const countries = Object.keys(COUNTRY_WORDS).filter(c => has(t, COUNTRY_WORDS[c]));
+    if (countries.length === 1) {
+      const c = countries[0], nice = c === 'usa' ? 'the United States' : c.replace(/\b\w/g, x => x.toUpperCase());
+      if (c === 'usa') return out('born-usa', 'Born in the United States', p => !p.intl);
+      const nationality = /\b(canadian|nationality|citizen|from)\b/.test(t);
+      return out('born-' + c, nationality ? `${COUNTRY_WORDS[c][1].charAt(0).toUpperCase() + COUNTRY_WORDS[c][1].slice(1)} (born in or a citizen of ${nice})` : `Born in ${nice}`, p => F(p).born === c || (nationality && (F(p).also || []).includes(c)));
+    }
+
+    // Position
+    if (/\bguard\b/.test(t)) return out('guard', 'Is a guard', p => p.pos === 'G', 'guard');
+    if (/\bforward\b/.test(t)) return out('forward', 'Is a forward', p => p.pos === 'F', 'forward');
+    if (/\b(center|centre|big man)\b/.test(t)) return out('center', 'Is a center', p => p.pos === 'C', 'center');
+
+    // Height
+    if (/\b(seven[- ]?footer|7[- ]?footer)\b/.test(t)) return out('tall84', "Listed at 7'0\" or taller", p => p.in >= 84);
+    if (/\b(tall|taller|shorter|short|height|feet|foot|ft|inches)\b|\d\s*'/.test(t)) {
+      m = t.match(/(\d)\s*(?:'|ft\b|feet\b|foot\b|-)\s*(\d{1,2})?/) || t.match(/\b(seven|six|five)\s+(?:feet|foot)\b/);
+      if (m) {
+        const ft = +m[1] || wordNum[m[1]], inch = m[2] ? +m[2] : 0, n = ft * 12 + inch, op = cmpOf(t) === '=' ? (/\btall\b/.test(t) && !/\bexactly\b/.test(t) ? '>=' : '=') : cmpOf(t);
+        if (n >= 60 && n <= 96) {
+          const preset = op === '>=' && n === 82 ? 'tall' : null;
+          const label = op === '=' ? `Listed at ${fmtIn(n)}` : op === '>=' ? `Listed at ${fmtIn(n)} or taller` : op === '<=' ? `Listed at ${fmtIn(n)} or shorter` : op === '>' ? `Taller than ${fmtIn(n)}` : `Shorter than ${fmtIn(n)}`;
+          return out(`h${op}${n}`, label, p => cmp(op, p.in, n), preset);
+        }
+      }
+    }
+
+    // Jersey number
+    if (/\b(jersey|number|numbered|wears?|wore|digit)\b|#\s*\d/.test(t)) {
+      if (/\bsingle[- ]digit\b|\bone digit\b/.test(t)) return out('single', 'Jersey number is a single digit', p => p.num <= 9, 'single');
+      if (/\b(double|two)[- ]digits?\b/.test(t)) return out('double', 'Jersey number has two digits', p => p.num >= 10);
+      if (/\bodd\b/.test(t)) return out('odd', 'Jersey number is odd', p => p.num % 2 === 1);
+      if (/\beven\b/.test(t)) return out('even', 'Jersey number is even', p => p.num % 2 === 0);
+      m = t.match(/between\s+#?(\d{1,2})\s+and\s+#?(\d{1,2})/);
+      if (m) { const lo = Math.min(+m[1], +m[2]), hi = Math.max(+m[1], +m[2]); return out(`num${lo}-${hi}`, `Jersey number from ${lo} to ${hi}`, p => p.num >= lo && p.num <= hi); }
+      m = t.match(/#?\s*(\d{1,2})\b/);
+      if (m) {
+        const n = +m[1], op = cmpOf(t);
+        const preset = op === '>=' && n === 30 ? 'num30' : null;
+        const label = op === '=' ? `Wears number ${n}` : `Jersey number ${opWord[op]} ${n}`;
+        return out(`num${op}${n}`, label, p => cmp(op, p.num, n), preset);
+      }
+    }
+
+    // Honors
+    if (/\bfinals mvp\b/.test(t)) return { error: "Finals MVP isn't on the fact sheet yet. Try regular-season MVP." };
+    if (/\bmvp\b|most valuable/.test(t)) return out('mvp', 'Won a regular-season MVP', p => !!p.mvp, 'mvp');
+    if (/\b(champion|championship|title|ring|rings|won it all)\b/.test(t)) return out('ring', 'Won an NBA championship', p => !!p.ring, 'ring');
+
+    // Draft
+    if (/(first|1st|number one|no ?1|#1|top)\s*(overall)?\s*(pick|draft|selection)|(first|1st|#1|top) overall|drafted (first|1st|#1|number one)/.test(t) && !/\btop[- ]\d/.test(t)) return out('first', 'Was the No. 1 overall pick', p => !!p.first, 'first');
+    m = t.match(/\btop[- ](\d{1,2}|three|five|ten)\b/);
+    if (m && /\b(pick|draft|drafted|selection)\b/.test(t)) { const n = +m[1] || wordNum[m[1]]; return out(`pick<=${n}`, `Drafted in the top ${n}`, p => F(p).pick <= n); }
+    if (/\blottery\b/.test(t)) return out('lottery', 'Was a lottery pick (top 14)', p => F(p).pick <= 14);
+    if (/\bsecond[- ]round\b/.test(t)) return out('round2', 'Was a second-round pick', p => F(p).pick > 30);
+    if (/\bfirst[- ]round\b/.test(t)) return out('round1', 'Was a first-round pick', p => F(p).pick <= 30);
+
+    // Path to the league
+    if (/\bhigh school\b|\bprep to pro\b|\bstraight (to|from)\b/.test(t)) return out('hs', 'Went straight from US high school to the NBA', p => !!F(p).hs);
+    if (/\b(college|university|ncaa)\b/.test(t)) return out('college', 'Played college basketball', p => !!p.college, 'college');
+
+    // Era
+    if (/\b(active|still playing|current player|currently playing|plays today)\b/.test(t)) return out('active', 'Still playing (2025–26)', p => !!F(p).active);
+    if (/\bretired\b/.test(t)) return out('retired', 'Retired', p => !F(p).active);
+    if (/\b2020s\b|\btwenty[- ]twenties\b/.test(t)) return out('s2020', 'Played in the 2020s', p => !!p.s2020, 's2020');
+    m = t.match(/\b(?:19|')?(50|60|70|80|90)s\b|\b(2000|2010)s\b|\b(fifties|sixties|seventies|eighties|nineties)\b/);
+    if (m) {
+      const start = m[2] ? +m[2] : m[3] ? { fifties: 1950, sixties: 1960, seventies: 1970, eighties: 1980, nineties: 1990 }[m[3]] : 1900 + +m[1];
+      const debutOnly = /\b(debut|start|started|rookie|drafted|began|entered)\b/.test(t);
+      return debutOnly
+        ? out(`debut${start}s`, `Debuted in the ${start}s`, p => F(p).debut >= start && F(p).debut < start + 10)
+        : out(`played${start}s`, `Played in the ${start}s`, p => F(p).debut < start + 10 && F(p).last >= start);
+    }
+    m = t.match(/\b(19[4-9]\d|20[0-2]\d)\b/);
+    if (m && /\b(debut|start|started|rookie|drafted|began|entered|career)\b/.test(t)) {
+      const y = +m[1], op = cmpOf(t);
+      const preset = op === '<' && y === 2000 ? 'pre2000' : null;
+      return out(`debut${op}${y}`, `Debuted ${op === '<' ? 'before' : op === '>' ? 'after' : op === '=' ? 'in' : opWord[op]} ${y}`, p => cmp(op, F(p).debut, y), preset);
+    }
+    return null;
+  }
+  const tidyQuestion = s => { s = s.trim().replace(/\s+/g, ' '); s = s.charAt(0).toUpperCase() + s.slice(1); return /[?]$/.test(s) ? s : s.replace(/[.!]+$/, '') + '?'; };
+
   // ---------- Helpers ----------
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -648,6 +877,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   const setup = { mode: store.get('wtb-mode', 'cpu'), diff: store.get('wtb-diff', 'normal'), names: store.get('wtb-names', ['', '']) };
   const wins = store.get('wtb-wins', {});
   const cur = () => G.players[G.cur];
+  const curQ = () => G.selected === 'custom' ? G.custom : qById[G.selected];
   const opp = () => G.players[1 - G.cur];
   // Your board is the human's in CPU mode and the current player's in 2-player mode.
   const viewerIdx = () => G.mode === 'cpu' ? 0 : G.cur;
@@ -667,7 +897,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
         { name: n0, secret: s0, out: new Set(), asked: new Map(), cpu: false },
         { name: n1, secret: s1, out: new Set(), asked: new Map(), cpu: isCpu },
       ],
-      cur: 0, phase: 'ask', selected: null, guessing: false, guessPick: null, qcount: 0, log: [],
+      cur: 0, phase: 'ask', selected: null, custom: null, guessing: false, guessPick: null, qcount: 0, log: [],
     };
     store.del('wtb-save');
     $('result').hidden = true; $('handoff').hidden = true; closeMenu();
@@ -732,14 +962,15 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     const groups = [...new Set(QUESTIONS.map(q => q.group))];
     const remaining = QUESTIONS.filter(q => !asker.asked.has(q.id)).length;
     $('questions').innerHTML = remaining === 0
-      ? '<div class="empty"><b>All 16 questions used</b>Make your guess from the players still standing</div>'
+      ? '<div class="empty"><b>All 16 listed questions used</b>Type your own above, or make your guess</div>'
       : groups.map(g => `<div class="qgroup"><span class="label">${g}</span><div class="qs">${
         QUESTIONS.filter(q => q.group === g).map(q => {
           const a = asker.asked.get(q.id);
           const st = a === undefined ? '' : `<span class="tag ${a ? 'y' : 'n'}">${a ? 'Yes' : 'No'}</span>`;
           return `<button class="chip${G.selected === q.id ? ' sel' : ''}" data-q="${q.id}" ${a !== undefined ? 'disabled' : ''}>${esc(q.chip)}${st}</button>`;
         }).join('')}</div></div>`).join('');
-    $('askedCount').textContent = `${asker.asked.size} of ${QUESTIONS.length} asked`;
+    $('askedCount').textContent = `${asker.asked.size} asked`;
+    $('ownQ').disabled = !canAsk;
 
     const cpuTurn = G.mode === 'cpu' && me.cpu && G.phase !== 'over';
     const over = G.phase === 'over';
@@ -750,7 +981,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     const qt = $('qbtnText');
     if (G.guessing) { qt.className = 'warn'; qt.innerHTML = G.guessPick ? `Guess ${esc(byId[G.guessPick].name)} <em>· wrong guess loses</em>` : 'Tap a card to guess <em>· wrong guess loses</em>'; }
     else if (G.phase === 'flip') { qt.className = 'ph'; qt.textContent = 'Flip down who doesn’t fit'; }
-    else if (G.selected) { qt.className = ''; qt.textContent = qById[G.selected].text; }
+    else if (G.selected) { qt.className = ''; qt.textContent = curQ().text; }
     else { qt.className = 'ph'; qt.textContent = 'Choose a question'; }
     $('qbtn').disabled = !canAsk;
     if (!canAsk) closeMenu();
@@ -785,7 +1016,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   function renderAll() { renderSeg(); renderBoard(); renderOpp(); renderScore(); renderDock(); renderLog(); saveGame(); }
 
   // ---------- Question menu ----------
-  function openMenu() { if ($('qbtn').disabled) return; $('qmenu').hidden = false; $('qbtn').setAttribute('aria-expanded', 'true'); }
+  function openMenu() { if ($('qbtn').disabled) return; $('qmenu').hidden = false; $('qbtn').setAttribute('aria-expanded', 'true'); readOwn(); }
   function closeMenu() { $('qmenu').hidden = true; $('qbtn').setAttribute('aria-expanded', 'false'); }
 
   // ---------- Live panel ----------
@@ -819,19 +1050,28 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   async function humanAsk() {
     if (!(G.phase === 'ask' && G.selected && !cur().cpu)) return;
     const token = G.token, me = cur(), them = opp(), meIdx = G.cur;
-    const q = qById[G.selected];
-    const a = q.test(byId[them.secret]);
-    G.selected = null; G.phase = 'busy'; G.qcount++;
-    me.asked.set(q.id, a);
+    const q = curQ();
+    G.selected = null; G.custom = null; G.phase = 'busy'; G.qcount++;
     closeMenu(); renderDock(); renderScore();
     await typeLive(`<b>${esc(me.name)}</b> ${verb(me.name, 'ask', 'asks')}`, q.text, token, 14);
     if (token !== G.token) return;
-    await sleep(300); if (token !== G.token) return;
-    stamp(a, `${them.name} ${verb(them.name, 'answer', 'answers')}`);
-    G.log.push({ who: meIdx, html: esc(q.text), a });
+    let a;
+    if (q.test) {
+      a = q.test(byId[them.secret]);
+      await sleep(300); if (token !== G.token) return;
+      stamp(a, `${them.name} ${verb(them.name, 'answer', 'answers')}${q.custom ? ` \u00b7 read as: ${q.label}` : ''}`);
+    } else {
+      a = await answerByHand(me, them, q.text);
+      if (token !== G.token) return;
+      stamp(a, `${them.name} answered by hand`);
+    }
+    me.asked.set(q.id, a);
+    G.log.push({ who: meIdx, html: esc(q.text) + (q.custom ? ` <small>\u00b7 ${esc(q.label)}</small>` : ''), a });
     G.phase = 'flip';
     renderLog(); renderDock();
-    if ($('autoFlip').checked) {
+    if ($('autoFlip').checked && !q.test) {
+      $('jSub').textContent = 'Auto-flip can\u2019t read a hand-answered question. Flip down who doesn\u2019t fit yourself.';
+    } else if ($('autoFlip').checked) {
       const out = PLAYERS.filter(p => !me.out.has(p.id) && q.test(p) !== a);
       for (const p of out) {
         if (token !== G.token) return;
@@ -845,6 +1085,47 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     } else {
       $('jSub').textContent = 'Flip down everyone who doesn’t fit, then end your turn';
     }
+  }
+
+  // 2 Players: a question the game can't read goes to the other player to answer.
+  function answerByHand(me, them, text) {
+    return new Promise(resolve => {
+      $('ansTag').textContent = 'Hand the device to';
+      $('ansName').textContent = them.name;
+      $('ansAsker').textContent = `${me.name} asks`;
+      $('ansQ').textContent = text; $('ansQ').hidden = false;
+      $('ansBtns').hidden = false; $('ansBack').hidden = true;
+      $('answerDlg').hidden = false; setTimeout(() => $('ansYes').focus(), 50);
+      const pick = val => {
+        $('ansYes').onclick = $('ansNo').onclick = null;
+        $('ansTag').textContent = `Answered ${val ? 'yes' : 'no'}`;
+        $('ansName').textContent = me.name; $('ansAsker').textContent = 'Hand the device back to'; $('ansQ').hidden = true;
+        $('ansBtns').hidden = true; $('ansBack').hidden = false; $('ansBack').textContent = `Continue as ${me.name}`; $('ansBack').focus();
+        $('ansBack').onclick = () => { $('ansBack').onclick = null; $('answerDlg').hidden = true; resolve(val); };
+      };
+      $('ansYes').onclick = () => pick(true); $('ansNo').onclick = () => pick(false);
+    });
+  }
+
+  function readOwn() {
+    const raw = $('ownQ').value, me = cur(), read = $('ownRead');
+    read.className = 'own-read'; $('ownUse').disabled = true; $('ownQ').dataset.ok = '';
+    if (!raw.trim()) { read.textContent = 'Teams, height, jersey number, birthplace, draft, era, honors or name initials'; return; }
+    const r = readQuestion(raw);
+    if (r && r.error) { read.classList.add('bad'); read.textContent = r.error; return; }
+    if (r && me.asked.has(r.id)) { read.classList.add('bad'); read.textContent = `Already asked: ${r.label} (${me.asked.get(r.id) ? 'yes' : 'no'})`; return; }
+    if (r) { read.classList.add('ok'); read.innerHTML = `Reads as: <b>${esc(r.label)}</b>`; $('ownUse').disabled = false; $('ownQ').dataset.ok = '1'; return; }
+    if (G.mode === 'pvp') { read.classList.add('ok'); read.innerHTML = `Can't read that one, so <b>${esc(opp().name)}</b> will answer it by hand`; $('ownUse').disabled = false; $('ownQ').dataset.ok = '1'; return; }
+    read.classList.add('bad'); read.textContent = "Can't read that one yet. Try teams, height, jersey number, birthplace, draft, era or honors.";
+  }
+  function useOwn() {
+    if ($('ownQ').dataset.ok !== '1' || $('ownQ').disabled) return;
+    const raw = $('ownQ').value, r = readQuestion(raw);
+    G.custom = r && !r.error
+      ? { id: r.id, text: tidyQuestion(raw), label: r.label, test: r.test, custom: true }
+      : { id: 'm:' + raw.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(), text: tidyQuestion(raw), label: 'answered by hand', test: null, custom: true };
+    G.selected = 'custom';
+    $('ownQ').value = ''; readOwn(); closeMenu(); renderDock(); $('askBtn').focus();
   }
 
   function endTurn() {
@@ -1021,7 +1302,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     G = {
       token: (G ? G.token : 0) + 1, mode: d.mode, diff: d.diff, cur: d.cur, phase: d.phase,
       players: d.players.map(p => ({ name: p.name, secret: p.secret, out: new Set(p.out), asked: new Map(p.asked), cpu: p.cpu })),
-      selected: null, guessing: false, guessPick: null, qcount: d.qcount || 0, log: d.log || [],
+      selected: null, custom: null, guessing: false, guessPick: null, qcount: d.qcount || 0, log: d.log || [],
     };
     $('pregame').hidden = true; $('app').hidden = false; $('dock').hidden = false;
     if (G.phase === 'handoff') { handoff(G.cur); return; }
@@ -1068,8 +1349,11 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   $('qbtn').addEventListener('click', () => $('qmenu').hidden ? openMenu() : closeMenu());
   $('questions').addEventListener('click', e => {
     const b = e.target.closest('.chip'); if (!b || b.disabled) return;
-    G.selected = b.dataset.q; closeMenu(); renderDock(); $('askBtn').focus();
+    G.selected = b.dataset.q; G.custom = null; closeMenu(); renderDock(); $('askBtn').focus();
   });
+  $('ownQ').addEventListener('input', readOwn);
+  $('ownQ').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); useOwn(); } });
+  $('ownUse').addEventListener('click', useOwn);
   document.addEventListener('click', e => { if (!$('qmenu').hidden && !e.target.closest('#qmenu') && !e.target.closest('#qbtn')) closeMenu(); });
   $('askBtn').addEventListener('click', () => G.guessing ? lockGuess() : humanAsk());
   $('endTurnBtn').addEventListener('click', endTurn);

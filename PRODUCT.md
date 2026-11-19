@@ -27,6 +27,7 @@ The CPU plays in the open: it lights up which players its question would keep, t
 - Modes: vs CPU (Rookie, All-Star, MVP difficulty) and 2 Players pass-and-play with a hand-off screen between turns.
 - 16 fixed yes/no questions in six groups (position, size and number, honors, path to the league, era, teams). Answers are filled in automatically from the secret player.
 - A wrong guess ends the game. Auto-flip is an optional helper.
+- Players can type their own yes/no question. The game reads it against a per-player fact sheet (teams, draft pick, birthplace, debut and last season, height, jersey number, honors, name initials) and shows how it read the question before it is asked. Naming a player is refused (that is a guess). In 2 Players, a question the game cannot read is answered by the other player by hand.
 
 ## Capabilities and Constraints
 
