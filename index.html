@@ -188,6 +188,10 @@ input[type="checkbox"] { accent-color: var(--accent); }
 .board-head .sub { margin-top: var(--s-2); display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; font-size: var(--text-sm); color: var(--ink-2); }
 .board-head .sub b { color: var(--ink); }
 .mine { display: inline-flex; align-items: center; gap: var(--s-2); padding: 3px var(--s-3) 3px 3px; border-radius: var(--r-sm); background: var(--panel); color: var(--ink-2); }
+.mine .peek { min-height: 32px; padding: 0 var(--s-2); }
+.mine.hidden i { background: var(--panel-2); color: var(--accent); }
+.board.picking .card:not(.pick) .front { opacity: .9; }
+.board.picking .card.pick .front { outline: 3px solid var(--accent); outline-offset: 2px; transform: translateY(-3px); }
 .mine i { width: 26px; height: 26px; border-radius: var(--r-xs); display: grid; place-items: center; font-style: normal; font-family: var(--font-call); font-weight: 900; font-size: var(--text-base); background: var(--c); color: var(--t); }
 .mine b { color: var(--ink); }
 .tools { display: flex; gap: var(--s-4); align-items: center; flex-wrap: wrap; }
@@ -536,7 +540,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   <div class="dialog help" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <h2 id="helpTitle">How to play</h2>
     <ol>
-      <li>You and your opponent each get a <b>secret player</b> from the same 24.</li>
+      <li>Start by <b>picking your secret player</b> from the 24 (or tap Random pick). It stays face down; tap <b>Show</b> to check it.</li>
       <li>On your turn, <b>ask one yes/no question</b>. The answer comes from their secret player automatically.</li>
       <li><b>Flip down</b> every card the answer rules out (tap a card, or turn on Auto-flip), then end your turn.</li>
       <li>Think you know it? Press <b>Guess</b>, tap the card and lock it in. <b>A wrong guess loses the game.</b></li>
@@ -907,29 +911,61 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 
   function newGame(cfg) {
     const token = (G ? G.token : 0) + 1;
-    const s0 = pick(PLAYERS).id;
-    let s1; do { s1 = pick(PLAYERS).id; } while (s1 === s0);
     const isCpu = cfg.mode === 'cpu', ownPhone = cfg.mode === 'talk2', talk = cfg.mode === 'talk1' || ownPhone;
     const n0 = isCpu ? 'You' : ownPhone ? ((cfg.names[0] || '').trim() || 'You') : ((cfg.names[0] || '').trim() || 'Player 1');
     let n1 = isCpu ? 'CPU' : ownPhone ? ((cfg.names[1] || '').trim() || 'Opponent') : ((cfg.names[1] || '').trim() || 'Player 2');
     if (!isCpu && n1 === n0) n1 += ' 2';
-    if (ownPhone) s1 = null; // their secret lives on their phone
+    // Humans pick their own secret player at the start of their first turn; the CPU's is dealt.
+    // On your own phone the opponent's secret lives on their phone (remote).
     G = {
       token, mode: cfg.mode, diff: cfg.diff,
       players: [
-        { name: n0, secret: s0, out: new Set(), asked: new Map(), cpu: false },
-        { name: n1, secret: s1, out: new Set(), asked: new Map(), cpu: isCpu },
+        { name: n0, secret: null, out: new Set(), asked: new Map(), cpu: false },
+        { name: n1, secret: isCpu ? pick(PLAYERS).id : null, out: new Set(), asked: new Map(), cpu: isCpu, remote: ownPhone },
       ],
-      cur: 0, phase: talk ? 'flip' : 'ask', selected: null, custom: null, guessing: false, guessPick: null, qcount: 0, log: [],
+      cur: 0, phase: 'pick', pickId: null, peek: false, selected: null, custom: null, guessing: false, guessPick: null, qcount: 0, log: [],
     };
     store.del('wtb-save');
     $('result').hidden = true; $('handoff').hidden = true; closeMenu();
     $('oppBoard').querySelectorAll('.tile').forEach(t => t.classList.remove('hl', 'target'));
-    if (ownPhone) setLive('Your turn', 'Ask your question out loud', null, 'They answer out loud. Flip down who doesn\u2019t fit, then tap End turn. If they go first, tap End turn now.');
-    else if (talk) setLive('', `${n0}, ask your question out loud`, null, 'Flip down who doesn\u2019t fit, then end your turn');
-    else setLive('', isCpu ? 'Ask a yes/no question about the CPU\'s player' : `${n0}, ask a yes/no question about ${n1}'s player`, null, isCpu ? 'You and the CPU each have a secret player' : 'Hand the device over between turns');
+    pickPrompt();
     renderAll();
     if (!isCpu && !ownPhone) handoff(0, true);
+  }
+
+  // ---------- Pick your secret player ----------
+  function pickPrompt() {
+    const me = cur();
+    setLive(G.mode === 'cpu' || G.mode === 'talk2' ? '' : `<b>${esc(me.name)}</b> picks`, me.name === 'You' ? 'Pick your secret player' : `${me.name}, pick your secret player`, null,
+      'Tap a card, then lock it in. It goes face down; tap Show to check it.');
+  }
+  function startTurnLive() {
+    const me = cur(), them = opp();
+    if (G.mode === 'talk2') setLive('Your turn', 'Ask your question out loud', null, 'They answer out loud. Flip down who doesn\u2019t fit, then tap End turn. If they go first, tap End turn now.');
+    else if (isTalk()) setLive(`<b>${esc(me.name)}</b> is up`, `${me.name}, ask your question out loud`, null, 'Flip down who doesn\u2019t fit, then end your turn');
+    else if (G.mode === 'cpu') setLive('', 'Ask a yes/no question about the CPU\'s player', null, 'Your player is locked in and hidden. Tap Show to check it.');
+    else setLive(`<b>${esc(me.name)}</b> is up`, 'Ask a question, or guess if you\'re sure', null, `${them.name} has ${PLAYERS.length - them.out.size} players left`);
+  }
+  function lockPick(id) {
+    if (G.phase !== 'pick' || !id) return;
+    const me = cur();
+    me.secret = id; G.pickId = null; G.peek = false;
+    // The CPU never shares your player.
+    if (G.mode === 'cpu') while (G.players[1].secret === id) G.players[1].secret = pick(PLAYERS).id;
+    G.log.push({ who: G.cur, html: `${esc(me.name)} locked in a secret player` });
+    // Sharing one device: both players pick before anyone asks, then the first turn goes to player 1.
+    const other = opp();
+    if (!other.cpu && !other.remote && !other.secret) { handoff(1 - G.cur); return; }
+    if (G.cur !== 0 && G.qcount === 0) { handoff(0); return; }
+    G.phase = isTalk() ? 'flip' : 'ask';
+    startTurnLive();
+    renderAll();
+  }
+  let peekT;
+  function setPeek(on) {
+    G.peek = on; clearTimeout(peekT);
+    if (on) peekT = setTimeout(() => { if (G) { G.peek = false; renderBoard(); } }, 4000);
+    renderBoard();
   }
 
   // ---------- Rendering ----------
@@ -938,18 +974,25 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     if (!b.children.length) b.innerHTML = PLAYERS.map((p, i) => `<button class="card" data-id="${p.id}" style="${cardStyle(p, i)}" title="${esc(p.nick)}">${cardInner(p)}</button>`).join('');
     const v = G.players[viewerIdx()];
     b.classList.toggle('guessing', G.guessing);
+    b.classList.toggle('picking', G.phase === 'pick');
     for (const el of b.children) {
       const id = el.dataset.id, o = v.out.has(id);
       el.classList.toggle('out', o);
-      el.classList.toggle('pick', G.guessing && G.guessPick === id);
+      el.classList.toggle('pick', (G.guessing && G.guessPick === id) || (G.phase === 'pick' && G.pickId === id));
       el.setAttribute('aria-pressed', String(o));
       el.setAttribute('aria-label', `${byId[id].name}${o ? ', flipped down' : ''}`);
     }
     $('boardTitle').textContent = `${poss(v.name)} 24 players`;
     renderLeft();
-    const sp = byId[v.secret];
-    $('secret').setAttribute('style', cardStyle(sp));
-    $('secret').innerHTML = `<i>${sp.num}</i><span>Your player: <b>${esc(sp.name)}</b></span>`;
+    // The secret sits face down; only the Show button reveals it, and it hides again after 4 seconds.
+    const sp = v.secret ? byId[v.secret] : null, label = v.name === 'You' ? 'Your player' : `${v.name}'s player`;
+    $('secret').classList.toggle('hidden', !(sp && G.peek));
+    $('secret').setAttribute('style', sp && G.peek ? cardStyle(sp) : '');
+    $('secret').innerHTML = !sp
+      ? `<i>?</i><span>${label}: not picked yet</span>`
+      : G.peek
+        ? `<i>${sp.num}</i><span>${label}: <b>${esc(sp.name)}</b></span><button class="textbtn peek" data-peek="0" aria-label="Hide ${label.toLowerCase()}">Hide</button>`
+        : `<i>?</i><span>${label}: hidden</span><button class="textbtn peek" data-peek="1" aria-label="Show ${label.toLowerCase()}">Show</button>`;
   }
   function renderLeft() {
     const n = PLAYERS.length - G.players[viewerIdx()].out.size;
@@ -971,7 +1014,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   function renderScore() {
     G.players.forEach((p, i) => {
       $('name' + i).textContent = p.name;
-      $('count' + i).textContent = p.secret === null ? '?' : PLAYERS.length - p.out.size;
+      $('count' + i).textContent = p.remote ? '?' : PLAYERS.length - p.out.size;
       const w = wins[winKey(i)] || 0;
       $('wins' + i).textContent = `${w} win${w === 1 ? '' : 's'}`;
       $('side' + i).classList.toggle('active', G.phase !== 'over' && G.cur === i);
@@ -1028,6 +1071,13 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     else { askBtn.textContent = 'Ask'; askBtn.className = 'btn primary'; askBtn.disabled = !(canAsk && G.selected); }
     gBtn.disabled = !(humanTurn && (G.phase === 'ask' || G.phase === 'flip'));
     gBtn.textContent = G.guessing ? 'Cancel' : 'Guess';
+    if (G.phase === 'pick') {
+      $('qbtn').hidden = true; endBtn.hidden = true; $('dockStatus').hidden = true;
+      askBtn.hidden = false; askBtn.className = 'btn primary'; askBtn.disabled = !G.pickId;
+      askBtn.textContent = G.pickId ? `Lock in ${byId[G.pickId].name.split(' ').pop()}` : 'Lock in player';
+      gBtn.hidden = false; gBtn.disabled = false; gBtn.textContent = 'Random pick';
+      return;
+    }
     if (isTalk() && !over) {
       // Talk mode: no question picker; End turn, Guess, and on your own phone their side of the turn too.
       const live = G.phase === 'flip' || G.phase === 'their';
@@ -1187,6 +1237,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   }
 
   function handoff(idx, first) {
+    G.peek = false;
     G.cur = idx; G.phase = 'handoff'; G.selected = null; G.guessing = false; G.guessPick = null;
     const me = G.players[idx], other = G.players[1 - idx];
     $('hoName').textContent = me.name;
@@ -1197,7 +1248,8 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     renderAll();
   }
   function takeover() {
-    $('handoff').hidden = true;
+    $('handoff').hidden = true; G.peek = false;
+    if (!cur().secret) { G.phase = 'pick'; G.pickId = null; pickPrompt(); renderAll(); return; }
     G.phase = isTalk() ? 'flip' : 'ask';
     if (isTalk()) setLive(`<b>${esc(cur().name)}</b> is up`, `${cur().name}, ask your question out loud`, null, 'Flip down who doesn\u2019t fit, then end your turn');
     else setLive(`<b>${esc(cur().name)}</b> is up`, 'Ask a question, or guess if you\'re sure', null, `${opp().name} has ${PLAYERS.length - opp().out.size} players left`);
@@ -1240,7 +1292,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     if (token !== G.token) return;
     await sleep(650); if (token !== G.token) return;
     let right;
-    if (them.secret === null) {
+    if (them.remote) {
       right = await askTalk(`Ask: is it ${byId[id].name}?`, `Say it out loud. What did ${them.name === 'Opponent' ? 'they' : them.name} answer?`, 'They said yes', 'They said no');
       if (token !== G.token) return;
       if (right === null) { G.phase = 'flip'; setLive('Your turn', 'Ask your question out loud', null, 'Guess cancelled'); renderAll(); return; }
@@ -1256,6 +1308,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 
   function onCardClick(id) {
     if (!G || G.phase === 'over' || G.phase === 'handoff') return;
+    if (G.phase === 'pick') { G.pickId = G.pickId === id ? null : id; renderBoard(); renderDock(); return; }
     const v = G.players[viewerIdx()];
     if (G.guessing) {
       if (v.out.has(id)) return;
@@ -1359,7 +1412,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
       $('resText').textContent = guessedRight ? `${w.name} named ${g} in ${turns}` : g ? `${l.name} guessed ${g}. Wrong call.` : `${l.name} guessed wrong.`;
       $('resLbl0').textContent = `${poss(G.players[0].name)} player`;
       $('resLbl1').textContent = `${poss(G.players[1].name)} player`;
-      $('resLbl1').parentElement.hidden = G.players[1].secret === null;
+      $('resLbl1').parentElement.hidden = !G.players[1].secret;
       $('resCard0').innerHTML = staticCard(byId[G.players[0].secret]);
       $('resCard1').innerHTML = G.players[1].secret ? staticCard(byId[G.players[1].secret]) : '';
       $('result').hidden = false;
@@ -1369,10 +1422,10 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 
   // ---------- Save and resume (survives refresh or the phone closing the tab) ----------
   function saveGame() {
-    if (!G || !['ask', 'flip', 'handoff', 'their'].includes(G.phase)) return;
+    if (!G || !['ask', 'flip', 'handoff', 'their', 'pick'].includes(G.phase)) return;
     store.set('wtb-save', {
       v: 1, mode: G.mode, diff: G.diff, cur: G.cur, phase: G.phase, qcount: G.qcount, log: G.log,
-      players: G.players.map(p => ({ name: p.name, secret: p.secret, out: [...p.out], asked: [...p.asked], cpu: p.cpu })),
+      players: G.players.map(p => ({ name: p.name, secret: p.secret, out: [...p.out], asked: [...p.asked], cpu: p.cpu, remote: !!p.remote })),
     });
   }
   function loadSave() {
@@ -1384,11 +1437,12 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   function resumeGame(d) {
     G = {
       token: (G ? G.token : 0) + 1, mode: d.mode, diff: d.diff, cur: d.cur, phase: d.phase,
-      players: d.players.map(p => ({ name: p.name, secret: p.secret, out: new Set(p.out), asked: new Map(p.asked), cpu: p.cpu })),
-      selected: null, custom: null, guessing: false, guessPick: null, qcount: d.qcount || 0, log: d.log || [],
+      players: d.players.map(p => ({ name: p.name, secret: p.secret, out: new Set(p.out), asked: new Map(p.asked), cpu: p.cpu, remote: !!p.remote })),
+      selected: null, custom: null, guessing: false, guessPick: null, pickId: null, peek: false, qcount: d.qcount || 0, log: d.log || [],
     };
     $('pregame').hidden = true; $('app').hidden = false; $('dock').hidden = false;
     if (G.phase === 'handoff') { handoff(G.cur); return; }
+    if (G.phase === 'pick') { pickPrompt(); renderAll(); return; }
     const me = cur();
     if (G.phase === 'their') setLive('Their turn', 'Answer their question out loud', null, 'Game restored');
     else if (isTalk()) setLive(`${esc(me.name)} ${verb(me.name, 'are', 'is')} up`, 'Ask your question out loud', null, 'Game restored. Flip down who doesn\u2019t fit, then end your turn.');
@@ -1440,9 +1494,10 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   $('ownQ').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); useOwn(); } });
   $('ownUse').addEventListener('click', useOwn);
   document.addEventListener('click', e => { if (!$('qmenu').hidden && !e.target.closest('#qmenu') && !e.target.closest('#qbtn')) closeMenu(); });
-  $('askBtn').addEventListener('click', () => G.guessing ? lockGuess() : humanAsk());
+  $('askBtn').addEventListener('click', () => G.phase === 'pick' ? lockPick(G.pickId) : G.guessing ? lockGuess() : humanAsk());
   $('endTurnBtn').addEventListener('click', endTurn);
-  $('guessBtn').addEventListener('click', toggleGuess);
+  $('guessBtn').addEventListener('click', () => G.phase === 'pick' ? lockPick(pick(PLAYERS).id) : toggleGuess());
+  $('secret').addEventListener('click', e => { const b = e.target.closest('[data-peek]'); if (b) setPeek(b.dataset.peek === '1'); });
   let resetT;
   $('resetFlips').addEventListener('click', () => {
     if (!G || G.phase === 'over' || G.phase === 'handoff') return;

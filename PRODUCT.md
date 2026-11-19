@@ -27,6 +27,7 @@ The CPU plays in the open: it lights up which players its question would keep, t
 - Modes: vs CPU (Rookie, All-Star, MVP difficulty) and 2 Players pass-and-play with a hand-off screen between turns.
 - Talk mode: players ask and answer out loud; the game only holds each board and secret player and tracks turns. One phone (passed between turns, guesses checked automatically) or each on their own phone (the player taps End turn / Their turn is done, and confirms what the other side answered to a guess).
 - 16 fixed yes/no questions in six groups (position, size and number, honors, path to the league, era, teams). Answers are filled in automatically from the secret player.
+- Each human picks their own secret player at the start (or takes a random pick); the CPU's is dealt and never matches yours. On a shared device both players pick, privately, before the first question. The pick sits face down and is shown only while its Show button is pressed (it hides again after 4 seconds and after every hand-off).
 - A wrong guess ends the game. Auto-flip is an optional helper.
 - Players can type their own yes/no question. The game reads it against a per-player fact sheet (teams, draft pick, birthplace, debut and last season, height, jersey number, honors, name initials) and shows how it read the question before it is asked. Naming a player is refused (that is a guess). In 2 Players, a question the game cannot read is answered by the other player by hand.
 
