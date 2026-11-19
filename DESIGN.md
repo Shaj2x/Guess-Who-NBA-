@@ -185,7 +185,7 @@ Monochrome raised-navy tiles with jersey numbers; ruled-out tiles become outline
 - Do keep team colour on the cards and nowhere else.
 - Do show one yellow primary action at a time.
 - Do label every count with what it counts ("24 LEFT").
-- Do keep the rules one tap away, and say "a wrong guess loses" whenever a guess is being picked.
+- Do keep the rules one tap away, and say "a miss costs your turn" whenever a guess is being picked.
 
 ### Don't:
 - Don't add glows, gradients on surfaces, or glass.

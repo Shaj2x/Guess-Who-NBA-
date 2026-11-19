@@ -529,7 +529,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
 <div class="overlay" id="pregame" hidden>
   <div class="dialog launcher" role="dialog" aria-modal="true" aria-label="Start a game">
     <div class="wordmark" id="pgMark"><svg viewBox="0 0 28 28" aria-hidden="true"><use href="#i-ball"/></svg><span>Who's That Baller?</span></div>
-    <p class="rule">Each side hides an NBA great. Ask yes/no questions, flip down who doesn't fit, and <b>name theirs first</b>. A wrong guess loses.</p>
+    <p class="rule">Each side hides an NBA great. Ask yes/no questions, flip down who doesn't fit, and <b>name theirs first</b>. A wrong guess costs your turn.</p>
     <div class="play">
       <button class="playbtn primary" id="resumeBtn" hidden>Continue game<span class="sub" id="resumeSub"></span></button>
       <button class="playbtn primary" id="modeCpu">Play vs CPU</button>
@@ -567,7 +567,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
       <li>Start by <b>picking your secret player</b> from the 24 (or tap Random pick). It stays face down; tap <b>Show</b> to check it.</li>
       <li>On your turn, <b>ask one yes/no question</b>. The answer comes from their secret player automatically.</li>
       <li><b>Flip down</b> every card the answer rules out (tap a card, or turn on Auto-flip), then end your turn.</li>
-      <li>Think you know it? Press <b>Guess</b>, tap the card and lock it in. <b>A wrong guess loses the game.</b></li>
+      <li>Think you know it? Press <b>Guess</b>, tap the card and lock it in. Right wins the game. <b>Wrong just costs your turn</b>: that card flips down and play goes on.</li>
       <li><b>Talk mode:</b> ask and answer out loud. The game keeps your board and secret player; flip your cards and tap <b>End turn</b> when you're done.</li>
     </ol>
     <div class="row"><button class="btn primary" id="helpClose">Got it</button></div>
@@ -1074,7 +1074,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     if (G.phase === 'their') return { name: 'Their turn', hint: 'Answer out loud, then tap Their turn is done', cls: 'theirs', key: 'their' };
     if (c.cpu) return { name: 'CPU\u2019s turn', hint: 'Watch its board and question', cls: 'theirs', key: 'cpu', spin: true };
     const nm = c.name === 'You' ? 'Your turn' : `${c.name}\u2019s turn`;
-    const hint = G.guessing ? 'Pick your guess. A wrong guess loses.' : G.phase === 'flip' ? (isTalk() ? 'Ask out loud, flip, then End turn' : 'Flip down who doesn\u2019t fit, then End turn') : 'Ask a question or guess';
+    const hint = G.guessing ? 'Pick your guess. A miss costs your turn.' : G.phase === 'flip' ? (isTalk() ? 'Ask out loud, flip, then End turn' : 'Flip down who doesn\u2019t fit, then End turn') : 'Ask a question or guess';
     return { name: nm, hint, cls: '', key: 'p' + G.cur };
   }
   function renderTurn() {
@@ -1134,7 +1134,7 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
     $('dockStatus').innerHTML = over ? 'Game over. Start a new game from the top.' : `${spinner}<span>CPU is choosing a question</span>`;
 
     const qt = $('qbtnText');
-    if (G.guessing) { qt.className = 'warn'; qt.innerHTML = G.guessPick ? `Guess ${esc(byId[G.guessPick].name)} <em>· wrong guess loses</em>` : 'Tap a card to guess <em>· wrong guess loses</em>'; }
+    if (G.guessing) { qt.className = 'warn'; qt.innerHTML = G.guessPick ? `Guess ${esc(byId[G.guessPick].name)} <em>· a miss costs your turn</em>` : 'Tap a card to guess <em>· a miss costs your turn</em>'; }
     else if (G.phase === 'flip') { qt.className = 'ph'; qt.textContent = 'Flip down who doesn’t fit'; }
     else if (G.selected) { qt.className = ''; qt.textContent = curQ().text; }
     else { qt.className = 'ph'; qt.textContent = 'Choose a question'; }
@@ -1351,12 +1351,14 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
   }
   async function theyGuessed() {
     const mine = byId[G.players[0].secret];
-    const right = await askTalk('They named a player', `Did they name your player, ${mine.name}? A wrong guess loses.`, `Yes, ${mine.name}`, 'No, wrong player');
+    const right = await askTalk('They named a player', `Did they name your player, ${mine.name}?`, `Yes, ${mine.name}`, 'No, wrong player');
     if (right === null) return;
     G.log.push({ who: 'ref', html: `${esc(G.players[1].name)} guessed ${right ? `<b>${esc(mine.name)}</b>` : 'wrong'}`, a: right });
     renderLog();
-    stamp(right, right ? `${G.players[1].name} named ${mine.name}` : `${G.players[1].name} guessed wrong`);
-    finish(right ? 1 : 0, right, right ? mine.id : null);
+    if (right) { stamp(true, `${G.players[1].name} named ${mine.name}`); finish(1, true, mine.id); return; }
+    // A miss costs their turn; the game goes on.
+    endTurn();
+    stamp(false, `${G.players[1].name} guessed wrong, so it\u2019s your turn`);
   }
 
   function toggleGuess() {
@@ -1382,11 +1384,17 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
       stamp(right, right ? 'Nothing but net' : 'Off the rim');
     } else {
       right = id === them.secret;
-      stamp(right, right ? 'Nothing but net' : `Off the rim. It was ${byId[them.secret].name}.`);
+      stamp(right, right ? 'Nothing but net' : `Off the rim. It isn\u2019t ${byId[id].name}.`);
     }
     G.log.push({ who: 'ref', html: `${esc(me.name)} guessed <b>${esc(byId[id].name)}</b>`, a: right });
     renderLog();
-    finish(right ? meIdx : 1 - meIdx, right, id);
+    if (right) { finish(meIdx, true, id); return; }
+    // A miss costs the turn: that card flips down and play goes on.
+    me.out.add(id);
+    renderBoard(); renderScore();
+    $('jSub').textContent = `${byId[id].name} flipped down. ${them.remote ? 'Their' : them.name === 'You' ? 'Your' : them.name + '\u2019s'} turn next.`;
+    await sleep(1300); if (token !== G.token) return;
+    G.phase = 'flip'; endTurn();
   }
 
   function onCardClick(id) {
@@ -1434,10 +1442,17 @@ details.facts[open] summary .icon { transform: rotate(45deg); }
       if (token !== G.token) return;
       await sleep(750); if (token !== G.token) return;
       const right = g === human.secret;
-      stamp(right, right ? 'The CPU got you' : `Off the rim. You had ${byId[human.secret].name}.`);
+      stamp(right, right ? 'The CPU got you' : `Off the rim. The CPU flips ${byId[g].name} down.`);
       G.log.push({ who: 'ref', html: `CPU guessed <b>${esc(byId[g].name)}</b>`, a: right });
       renderLog();
-      finish(right ? 1 : 0, right, g);
+      if (right) { finish(1, true, g); return; }
+      // The CPU's miss costs its turn too.
+      tile(g).classList.remove('target'); me.out.add(g); tile(g).classList.add('out');
+      $('oppLeft').textContent = PLAYERS.length - me.out.size; renderScore();
+      await sleep(1100); if (token !== G.token) return;
+      G.cur = 0; G.phase = 'ask';
+      setLive('<b>You</b> are up', 'Ask a question, or guess if you\'re sure', null, `The CPU missed and is down to ${PLAYERS.length - me.out.size}`);
+      renderAll();
       return;
     }
 
